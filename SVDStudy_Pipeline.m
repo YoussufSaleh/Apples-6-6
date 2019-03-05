@@ -11,12 +11,9 @@
     
 clear
 close all
-%test
-% Load data
-load interim_56 ;% this has reshaped choice arrays and is useful for some things
-load larsT56.mat; % Self assessment LARS
-load aes56.mat;
-load larsSub56.mat; % 4 subscales of lars
+
+% Load Questionnaire data after exlusion
+
 subj = size(D.R,1); %How many subjects?
 
 % exclude RJ from SVD cohort. 
