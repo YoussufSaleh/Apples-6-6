@@ -2,15 +2,16 @@
 %% Intention is for this to be the 'final' script for Small vessel disease 
 % This includes data pre-processing, visualisation of data and analysis as
 % well as the produciton of key MRI regressors. 
-%% Performing relevant analyses including computational modeling. 
+%% Performing relevant analyses including computational modelling. 
 % Components will therefore be:
-... 1) Basic processing and analysis/graphing of raw data 
-... 2) Running of competing computational models 
-... 3) Analysis and comparison of model parameters 
+% 1. Converting excel sheet into a matlab table and extracting on excluded
+% data points. 
+% 2. Plotting a correlations table of all the questionnaires. 
+% 3. Using a median split to look at 
     
 clear
 close all
-% NOTE: cad_demo contains [AGE GENDER ACE-TOTAL]
+
 
 % Load data
 load interim_56 ;% this has reshaped choice arrays and is useful for some things
