@@ -1,12 +1,15 @@
 %% Script for Youssuf Saleh's Small Vessel Disease paper and thesis.  
 %% Intention is for this to be the 'final' script for Small vessel disease 
-% This includes data pre-processing, visualisation of data and analysis as
-% well as the produciton of key MRI regressors. 
+% This includes data pre-
 %% Performing relevant analyses including computational modeling. 
 % Components will therefore be:
 ... 1) Basic processing and analysis/graphing of raw data 
-... 2) Running of competing computational models 
-... 3) Analysis and comparison of model parameters 
+... 2) Running of competing computational models - in this case includes the 
+... GLME (which produced somewhat counterintuitive results), the straight
+... logistic regression (which produced somewaht counterintuitive results)
+... and possibly the exponential model (or others for comparison e.g. quadratic)
+
+... 3) Analysis and comparison of model parameters + eg pupil data (+/- imaging)
     
 clear
 close all
