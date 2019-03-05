@@ -64,17 +64,11 @@ save('Questionnaires_final','FQs_Ex','Qs_Final_raw');
 % Before doing this you should temporarily remove matlib from your path as
 % it contains a function with the same name that does something different. 
 rmpath     '/Users/youssufsaleh/Documents/Master folder/Apples v2/matlib'
-
-[R,PValue] = corrplot(FQs_Ex(:,{'Age','LARS_TOTAL' 'LARS_E','LARS_AI','LARS_SA', ...
+% 
+[R,PValue,H] = corrplot(FQs_Ex(:,{'Age','LARS_TOTAL' 'LARS_E','LARS_AI','LARS_SA', ...
  'AES_TOTAL','AES_Cognitive','AES_Behavioural', ...
  'AES_Emotional','Other','BDI','ACE_Total'}), ...
  'type','Pearson','testR','on','rows','pairwise');
-
-% we will add this back on right after as matlib is used regularly for the
-% rest of the analysis. 
-addpath     '/Users/youssufsaleh/Documents/Master folder/Apples v2/matlib'
-savepath pwd
-
 
 
 %% Look at the average data. 

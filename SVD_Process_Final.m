@@ -18,7 +18,7 @@
 %create cell array allStudyGroups which contains cell arrays with the title and
 %data sets for each individual in the relevant cohort. 
 
-clear 
+%clear 
 
 allStudyGroups = { ...
     % subGroup FILE TEMPLATE,  SUBJECT NUMBERS
@@ -264,19 +264,6 @@ for i=1:size(d.R,1) % for each subject
         grpD.forceD2{subGroup} = forceD2;
     end
     grpD.hand{subGroup} = hand;
-    grpD.numExcl{subGroup} = numExcl;
-    % Plot model fit
-if 1
-    subplot(10,9,i)
-    plot(model_p',':','LineWidth',3)
-    hold on
-    set(gca,'ColorOrderIndex',1);
-    plot(nanmean(grpD.choicemap{1}(:,:,i,:),4)','LineWidth',3)
-    %legend('r6','r5','r4','r3','r2','r1')
-    xlim([0 6]);
-    hold off
-    
-end
 end
 
 
