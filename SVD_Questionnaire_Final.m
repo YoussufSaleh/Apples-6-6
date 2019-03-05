@@ -55,6 +55,19 @@ clearvars data raw stringVectors R;
 %% Extract excluded subjects
 FQs_Ex= Qs_Final_raw(Qs_Final_raw.Excluded==0,:);
 
+% Having done this, what we want to look at is a single latent variable
+% that looks at the combined effect of the LARS and AES. Here I will use
+% the LARS - Action Initiation. 
+[coeff,score,latent,tsquared,explained,mu]=pca(nanzscore ...
+    ([FQs_Ex.AES_TOTAL,FQs_Ex.LARS_AI]),'NumComponents',1);
+Composite = score;
+
+% lets add this onto the parent table. nb. 'addvars' is a function that needs
+% MATLAB version 2018a and beyond. 
+FQs_Ex = addvars(FQs_Ex,Composite,'After','Other');
+% now lets have a look at how this measures up against the rest of the
+% variables
+
 save('Questionnaires_final','FQs_Ex','Qs_Final_raw');
 
 
@@ -67,94 +80,27 @@ rmpath     '/Users/youssufsaleh/Documents/Master folder/Apples v2/matlib'
 
 [R,PValue] = corrplot(FQs_Ex(:,{'Age','LARS_TOTAL' 'LARS_E','LARS_AI','LARS_SA', ...
  'AES_TOTAL','AES_Cognitive','AES_Behavioural', ...
- 'AES_Emotional','Other','BDI','ACE_Total'}), ...
+ 'AES_Emotional','Other','Composite','BDI','ACE_Total'}), ...
  'type','Pearson','testR','on','rows','pairwise');
 
-% we will add this back on right after as matlib is used regularly for the
+
+
+
+% What I want to do now is add on the accept variable from the analysis
+% script to see how this correlates with my different questionnaires. 
+
+Qs_Accept = addvars(FQs_Ex,accept,'After','Excluded');
+
+[R,PValue] = corrplot(Qs_Accept(:,{'Age','LARS_TOTAL' 'LARS_E','LARS_AI','LARS_SA', ...
+ 'AES_TOTAL','AES_Cognitive','AES_Behavioural', ...
+ 'AES_Emotional','Other','Composite','BDI','ACE_Total','accept'}), ...
+ 'type','Pearson','testR','on','rows','pairwise');
+
+
+% Add matlib back on as it is used regularly for the
 % rest of the analysis. 
 addpath     '/Users/youssufsaleh/Documents/Master folder/Apples v2/matlib'
 savepath pwd
-
-
-
-%% Look at the average data. 
-
-c = @cmu.colors;
-
-close all
-grp_rew_2D = squeeze(mean(freqmap,1))';
-H1=shadedErrorBar(1:6,nanmean(grp_rew_2D),   ...
-    nanstd(grp_rew_2D./sqrt(36)),'lineprops',...
-    {'color', c('royal purple')},...
-    'patchSaturation',0.3);
-hold on 
-grp_eff_2D = squeeze(mean(freqmap,2))';
-H2=shadedErrorBar(1:6,nanmean(grp_eff_2D),   ...
-    nanstd(grp_eff_2D./sqrt(36)),'lineprops',...
-    {'color',c('air force blue')},  ...
-    'patchSaturation',0.3);
-axis square
-ylim([0 1.1]);xlim([0 7])
-ax=gca;
-set(ax,'fontWeight','bold','fontSize',16,'XTick',[1:1:5], ...
-  'XTickLabel',{'1','2','3','4','5','6'})
-xlabel('Reward/Effort level')
-ylabel('Prop. Offers Accepted')
-ylim([0.2 1])
-title('Ave. Group Performance across task');
-hold off
-
-
-[lgd, icons, plots, txt] = legend([H1.mainLine H2.mainLine],{'Reward','Effort'});
-
-% for each individual. 
-
-subjects = [1:83];
-close all
-% now for each individual. 
-% create matrices compatible with the errorbar function in order to
-% generate errorbars for each individual's plots. 
-% first rearrange the choice map so that we can have each subjects choice
-% data individually available to create error bars for each. 
-permute_choicemap_rew = squeeze(mean(permute(choicemap,[1,2,4,3]),1));
-permute_choicemap_eff = squeeze(mean(permute(choicemap,[1,2,4,3]),2));
-dat_rew = permute(permute_choicemap_rew,[2,1,3]);
-dat_eff = permute(permute_choicemap_eff,[2,1,3]);
-
-% now generate a subplot for each individual with their performance. 
-%create legend indices
-close all
-figure()
-subj = size(D.R,1);
-exclude = [26:28 32:33];
-for i = 1:subj
-  subplot(10,9,i)
-  hold on
-  H3= shadedErrorBar(1:6,nanmean(dat_rew(:,:,i),1), ...
-    nanstd(dat_rew(:,:,i)./sqrt(6)),'lineprops',...
-    {'color', c('royal purple')},...
-    'patchSaturation',0.3);
-  hold on
-  H4= shadedErrorBar(1:6,nanmean(dat_eff(:,:,i),1), ...
-    nanstd(dat_eff(:,:,i)./sqrt(6)),'lineprops',...
-    {'color', c('air force blue')},...
-    'patchSaturation',0.3);
-  hold off
-  hold off
-  axis square
-  ylim([0 1.1]); xlim([0 6]);
-  title(['Subject ' num2str(subjects(i))],'FontSize',8);
-  %ax=gca;
-  %set(ax,'fontWeight','bold','fontSize',12,'XTick',[1:1:5], ...
-   % 'XTickLabel',{'1','2','3','4','5'})
-end
-
-[lgd, icons, plots, txt] = legend([H3.mainLine H4.mainLine],...
-  {'Reward','Effort'});
-
- [ax1,h1]=suplabel('Effort/Reward Level');
- [ax2,h2]=suplabel('Prop. Accepted','y');
-
 
 
 

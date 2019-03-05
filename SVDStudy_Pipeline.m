@@ -8,7 +8,94 @@
 % data points. 
 % 2. Plotting a correlations table of all the questionnaires. 
 % 3. Using a median split to look at 
-    
+
+
+
+
+% first of all I want a simple visualisation of the entire group's
+% behavioura over the  course of the task. 
+c = @cmu.colors;
+
+close all
+grp_rew_2D = squeeze(mean(freqmap,1))';
+H1=shadedErrorBar(1:6,nanmean(grp_rew_2D),   ...
+    nanstd(grp_rew_2D./sqrt(size(D.R,1))),'lineprops',...
+    {'color', c('royal purple')},...
+    'patchSaturation',0.3);
+hold on
+grp_eff_2D = squeeze(mean(freqmap,2))';
+H2=shadedErrorBar(1:6,nanmean(grp_eff_2D),   ...
+    nanstd(grp_eff_2D./sqrt(size(D.R,1))),'lineprops',...
+    {'color',c('air force blue')},  ...
+    'patchSaturation',0.3);
+axis square
+ylim([0 1.1]);xlim([0 7])
+ax=gca;
+set(ax,'fontWeight','bold','fontSize',16,'XTick',[1:1:5], ...
+    'XTickLabel',{'1','2','3','4','5','6'})
+xlabel('Reward/Effort level')
+ylabel('Prop. Offers Accepted')
+ylim([0 1.1]); xlim([0.5 6.5]);xticks([1 2 3 4 5 6]);
+title('SVD Group Performance across task');
+hold off
+
+
+[lgd, icons, plots, txt] = legend([H1.mainLine H2.mainLine],{'Reward','Effort'});
+
+
+% I now want to quality check every single subjects behaviour throughout
+% the task. 
+subjects = [1:83];
+close all
+% now for each individual. 
+% create matrices compatible with the errorbar function in order to
+% generate errorbars for each individual's plots. 
+% first rearrange the choice map so that we can have each subjects choice
+% data individually available to create error bars for each. 
+permute_choicemap_rew = squeeze(mean(permute(choicemap,[1,2,4,3]),1));
+permute_choicemap_eff = squeeze(mean(permute(choicemap,[1,2,4,3]),2));
+dat_rew = permute(permute_choicemap_rew,[2,1,3]);
+dat_eff = permute(permute_choicemap_eff,[2,1,3]);
+
+% now generate a subplot for each individual with their performance. 
+%create legend indices
+close all
+figure()
+subj = size(D.R,1);
+
+%exclude = [which ever subvject number you want to exclude]; You can use
+%this as a handle to index into and look closer at those not behaving
+%typically. 
+for i = 1:subj
+  subplot(10,9,i)
+  hold on
+  H3= shadedErrorBar(1:6,nanmean(dat_rew(:,:,i),1), ...
+    nanstd(dat_rew(:,:,i)./sqrt(5)),'lineprops',...
+    {'color', c('royal purple')},...
+    'patchSaturation',0.3);
+  hold on
+  H4= shadedErrorBar(1:6,nanmean(dat_eff(:,:,i),1), ...
+    nanstd(dat_eff(:,:,i)./sqrt(5)),'lineprops',...
+    {'color', c('air force blue')},...
+    'patchSaturation',0.3);
+  hold off
+  hold off
+  axis square
+  ylim([0 1.1]); xlim([0.5 6.5]);xticks([1 2 3 4 5 6]);
+  title(['Subject ' num2str(subjects(i))],'FontSize',8);
+  %ax=gca;
+  %set(ax,'fontWeight','bold','fontSize',12,'XTick',[1:1:5], ...
+    %xticksabel({'1','2','3','4','5','6'});
+end
+
+[lgd, icons, plots, txt] = legend([H3.mainLine H4.mainLine],...
+  {'Reward','Effort'});
+
+ [ax1,h1]=suplabel('Effort/Reward Level');
+ [ax2,h2]=suplabel('Prop. Accepted','y');
+
+
+
 clear
 close all
 
@@ -17,13 +104,11 @@ close all
 subj = size(D.R,1); %How many subjects?
 
 % exclude RJ from SVD cohort. 
-larsT = larsT56;
-aesVec = aes56;
-larsSub = larsSub56;
+
 % create apathy vector (~debatable on exactly how to categorise patients)
 apVec=[]';
 for i = 1:subj
-    if larsT(i)>-22 || aesVec(i) > 37
+    if FQs_Ex.LARS_TOTAL(i)>-22 || FQs_Ex.AES_TOTAL(i) > 37
         apVec(i)=1;
     else apVec(i)=0;
     end
@@ -63,6 +148,7 @@ rawYes=D.Yestrial; rawYes(isnan(rawYes))=0;
 D.Yestrial=D.Yestrial(:,37:end);
 D.stake = D.stake(:,37:end);
 D.effort = D.effort(:,37:end);
+D.reward = D.reward(:,37:end);
 D.maximumForce = D.maximumForce(:,37:end);
 %D.vigour = D.vigour(:,37:end);
 
@@ -105,10 +191,10 @@ for i=1:subj
     grpD.reject(i) = length(find(yesTrial(i,:)==0));
     grpD.mistake(i)= length(find(isnan(yesTrial(i,:))));
     grpD.trialsCorr(i)= length(find(~isnan(yesTrial(i,:)))); % how many trials after removing mistakes
-    grpD.fail(i) = length(find(yesTrial(i,:)==1 & reward(i,:)==0));
-    grpD.failCorr(i) = length(find(yesTrial(i,:)==1 & reward(i,:)==0))/grpD.trialsCorr(i);
-    grpD.failHighEff(i) = length(find(yesTrial(i,:)==1 & reward(i,:)==0 & D.effort(i,:)>0.6))/grpD.trialsCorr(i); % this metric erroneous as divides by ALL trials
-    grpD.failHighEff2(i) = length(find(yesTrial(i,:)==1 & reward(i,:)==0 & D.effort(i,:)>0.6));
+    grpD.fail(i) = length(find(yesTrial(i,:)==1 & D.reward(i,:)==0));
+    grpD.failCorr(i) = length(find(yesTrial(i,:)==1 & D.reward(i,:)==0))/grpD.trialsCorr(i);
+    grpD.failHighEff(i) = length(find(yesTrial(i,:)==1 & D.reward(i,:)==0 & D.effort(i,:)>0.6))/grpD.trialsCorr(i); % this metric erroneous as divides by ALL trials
+    grpD.failHighEff2(i) = length(find(yesTrial(i,:)==1 & D.reward(i,:)==0 & D.effort(i,:)>0.6));
 end
 
 accept=grpD.accept';
@@ -323,61 +409,82 @@ end
 
 %% **************** 2D plots ***********************
 % using just errorbar function to avoid difficulties with errorBarPlot
-close all
+c = @cmu.colors;
 
-figure()
+close all
+subplot(1,3,1);
 dat = squeeze(mean(choices,2))';
-%dat_hc=squeeze(mean(choices_HC,2))';
-%errorbar(1:6,mean(dat_hc),std(dat_hc)./sqrt(19),'--','Color',[0.7 0.7 0.7],'LineWidth',3); hold on;
-errorbar(1:6,mean(dat(apVec==0,:)),std(dat(apVec==0,:))./sqrt(length(find(apVec==0))),'b','LineWidth',3); 
-hold on
-errorbar(1:6,mean(dat(apVec==1,:)),std(dat(apVec==1,:))./sqrt(length(find(apVec==1))),'r','LineWidth',3)
-title('')
-axis square
-ylim([0 1.1]);xlim([0 7])
+H1=shadedErrorBar(1:6,nanmean(dat(apVec==0,:)),   ...
+    nanstd(dat(apVec==0,:)./sqrt(length(find(apVec==0)))),'lineprops',...
+    {'color', c('air force blue')},...
+    'patchSaturation',0.3);
+hold on 
+H2=shadedErrorBar(1:6,nanmean(dat(apVec==1,:)),   ...
+    nanstd(dat(apVec==1,:)./sqrt(length(find(apVec==1)))),'lineprops',...
+    {'color', c('brick red')},...
+    'patchSaturation',0.3);axis square
+ylim([0 1.1]);xlim([0.5 6.5])
 ax=gca;
-set(ax,'fontWeight','bold','fontSize',20,'XTick',[1:1:6],'XTickLabel',{'10','24','38','52','66','80'})
-xlabel('Effort level (% MVC)')
+set(ax,'fontWeight','bold','fontSize',16,'XTick',[1:1:6], ...
+  'XTickLabel',{'1','2','3','4','5','6'})
+xlabel('Reward/Effort level')
+ylabel('Prop. Offers Accepted')
+ylim([0.2 1])
+title('Effort vs Apathy');
 hold off
-legend({'SVD No Apathy','SVD Apathy'});
-figure()
+
+
+[lgd, icons, plots, txt] = legend([H1.mainLine H2.mainLine],{'No Apathy','Apathy'});
+
+
 dat = squeeze(mean(choices,1))';
-%dat_hc=squeeze(mean(choices_HC,1))';
-%errorbar(1:6,mean(dat_hc),std(dat_hc)./sqrt(19),'--','Color',[0.7 0.7 0.7],'LineWidth',3); hold on;
-errorbar(1:6,mean(dat(apVec==0,:)),std(dat(apVec==0,:))./sqrt(length(find(apVec==0))),'b','LineWidth',3); hold on;
-errorbar(1:6,mean(dat(apVec==1,:)),std(dat(apVec==1,:))./sqrt(length(find(apVec==1))),'r','LineWidth',3)
-%title('proportion of offers accepted as reward level increases')
-legend('SVD No Apathy','SVD Apathy');
-axis square
-ylim([0 1.1]);xlim([0 7])
+subplot(1,3,2)
+H1=shadedErrorBar(1:6,nanmean(dat(apVec==0,:)),   ...
+    nanstd(dat(apVec==0,:)./sqrt(length(find(apVec==0)))),'lineprops',...
+    {'color', c('royal purple')},...
+    'patchSaturation',0.3);
+hold on 
+H2=shadedErrorBar(1:6,nanmean(dat(apVec==1,:)),   ...
+    nanstd(dat(apVec==1,:)./sqrt(length(find(apVec==1)))),'lineprops',...
+    {'color', c('brick red')},...
+    'patchSaturation',0.3);axis square
+ylim([0 1.1]);xlim([0.5 6.5])
 ax=gca;
-set(ax,'fontWeight','bold','fontSize',20,'XTick',[1:1:6],'XTickLabel',{'1','3','6','9','12','15'})
-xlabel('Reward level')
-ylabel('Proportion of offers accepted')
+set(ax,'fontWeight','bold','fontSize',16,'XTick',[1:1:6], ...
+  'XTickLabel',{'1','2','3','4','5','6'})
+xlabel('Reward/Effort level')
+ylabel('Prop. Offers Accepted')
+ylim([0.2 1])
+title('Reward vs Apathy');
+hold off
+
+
+[lgd, icons, plots, txt] = legend([H1.mainLine H2.mainLine],{'No Apathy','Apathy'});
+
 
 %% Apathy - No Apathy plots (raw difference)
 %  3D difference plot (2D plot not amazing...
-close all
+subplot(1,3,3)
 choiceDif=(mean(choices(:,:,apVec==0),3)-mean(choices(:,:,apVec==1),3));
-h=surf(choiceDif);shading('interp');hold on;colormap('jet');...
-colorbar('Ticks',0:.05:.2,'Location','manual','Position',[0.045 0.25 0.025,0.4],'Units','normalized','Ticks',[]);
-
+h=surf(choiceDif);shading('interp');hold on;colormap('jet');%colorbar('Ticks',0:.05:.2)
 ax=gca;
-set(ax,'fontWeight','bold','fontSize',20,'XTick',[1:1:6],'YTickLabel',{'10','24','38','52','66','80'},'YTick',[1:1:6],'XTickLabel',{'1','3','6','9','12','15'},'ZTickLabel',{'','0','0.1','0.2','0.3','0.4','0.5'})
-title({'Difference in Proportion '; 'offers accepted:';'No Apathy - Apathy'});
-ylabel('Effort')
+set(ax,'fontWeight','bold','fontSize',16,'XTick',[1:1:5],'YTickLabel',{'1','2','3','4','5'},'YTick',[1:1:5],'XTickLabel',{'1','2','3','4','5'},'ZTickLabel',{'','0','0.1','0.2','0.3','0.4','0.5'})
+title('3D plot NoAp vs. AP')
+ylabel('Effort (%MVC)')
 xlabel('Reward')
+zlabel('Diff. Proportion accepted')
 hold on;
-base=zeros(6,6);
+base=zeros(5,5);
 hh=surf(base);
 hh.FaceColor=[0.5 0.5 0.5];hh.FaceAlpha=1;
 view(25,30)
 if 1 % if want to add on grid lines
-    for i=1:6
-        plot3(1:6,(i)*ones(6,1),choiceDif(i,1:6),'k:','LineWidth',2)
-        plot3((i)*ones(6,1),1:6,choiceDif(1:6,i),'k:','LineWidth',2)
+    for i=1:5
+        plot3(1:5,(i)*ones(5,1),choiceDif(i,1:5),'k:','LineWidth',2)
+        plot3((i)*ones(5,1),1:5,choiceDif(1:5,i),'k:','LineWidth',2)
     end
 end
+colorbar
 
 %ax.ZTickLabel={'0','0.1','0.2','0.3','0.4'}
 
@@ -873,8 +980,8 @@ end
 tempN=squeeze(nanmean(nanmean(vig(:,:,apVec==0))));
 tempA=squeeze(nanmean(nanmean(vig(:,:,apVec==1))));
 figure()
-bar(1,nanmean(tempN),'b'); hold on; errorbar(1,nanmean(tempN),std(tempN)./sqrt(34),'k','LineWidth',2)
-bar(2,nanmean(tempA),'r');errorbar(2,nanmean(tempA),std(tempA)./sqrt(19),'k','LineWidth',2)
+bar(1,nanmean(tempN),'b'); hold on; errorbar(1,nanmean(tempN),std(tempN)./sqrt(length(find(apVec==0))),'k','LineWidth',2)
+bar(2,nanmean(tempA),'r');errorbar(2,nanmean(tempA),std(tempA)./sqrt(length(find(apVec==1))),'k','LineWidth',2)
 ax=gca;
 set(ax,'fontWeight','bold','fontSize',20,'XTick',1:2,'XTickLabel',{'SVD NoA','SVD Ap'})
 ylabel('Motor Vigour Ix ')
@@ -887,9 +994,9 @@ tempA=squeeze(nanmean(nanmean(vig(1:2,5:6,apVec==1))))-squeeze(nanmean(nanmean(v
 
 figure()
 %bar(1,mean(tempHC),'m');hold on;errorbar(1,mean(tempHC),std(tempHC)./sqrt(19),'k','LineWidth',2)
-bar(1,nanmean(tempN),'b');hold on;errorbar(1,nanmean(tempN),nanstd(tempN)./sqrt(34),'k','LineWidth',2)
+bar(1,nanmean(tempN),'b');hold on;errorbar(1,nanmean(tempN),nanstd(tempN)./sqrt(length(find(apVec==0))),'k','LineWidth',2)
 hold on
-bar(2,nanmean(tempA),'r');errorbar(2,nanmean(tempA),nanstd(tempA)./sqrt(19),'k','LineWidth',2)
+bar(2,nanmean(tempA),'r');errorbar(2,nanmean(tempA),nanstd(tempA)./sqrt(length(find(apVec==1))),'k','LineWidth',2)
 ax=gca;
 set(ax,'fontWeight','bold','fontSize',20,'XTick',1:2,'XTickLabel',{'SVD NoAp','SVD Ap'})
 ylabel('Effect of Reward on change in Motor Vigour')
@@ -900,10 +1007,6 @@ ylabel('Effect of Reward on change in Motor Vigour')
 clear DT ap vecA vecnoA
 DT = dt;
 ap=apVec;
-DT(19,:)=[];
-DTT(19,:)=[];
-
-ap(19)=[];
 
 close all
 for i=1:length(find(ap==0))
@@ -1203,10 +1306,10 @@ ylim([0.2 1.1]);xlim([0 7]);
 % Dysphoria subscale does not really split apathetic group up (using median
 % split) - can argue anyway to use GDS given prevalence in SVD cohorts... 
 close all
-load demo_Cad19
+
 depVec=[];
-for i=1:19
-    if t.gdsD(i)<=4
+for i=1:subj
+    if FQs_Ex.BDI(i)<=13
         depVec(i)=0;
     else
         depVec(i)=1;
@@ -1218,12 +1321,12 @@ depVec=depVec';
 for i=1:2
     figure();
     dat = squeeze(mean(choices,i))';
-    dat_hc=squeeze(mean(choices_HC,i))';
-    errorbar(1:6,mean(dat_hc),std(dat_hc)./sqrt(19),'m--','LineWidth',3); hold on;
+   % dat_hc=squeeze(mean(choices_HC,i))';
+    %errorbar(1:6,mean(dat_hc),std(dat_hc)./sqrt(19),'m--','LineWidth',3); hold on;
     errorbar(1:6,mean(dat(depVec==0,:)),std(dat(depVec==0,:))./sqrt(length(depVec==0)),'b','LineWidth',3); hold on;
     errorbar(1:6,mean(dat(depVec==1,:)),std(dat(depVec==1,:))./sqrt(length(depVec==1)),'r','LineWidth',3)
     %title('proportion of offers accepted as reward level increases')
-    legend('Controls','SVDc No Depr','SVDc Depr');
+    legend('SVDc No Depr','SVDc Depr');
     axis square
     ylim([0 1.1]);xlim([0 7])
     ax=gca;
@@ -1312,8 +1415,8 @@ linear=0;
 
 %zscores for qs.
 % AES and LARS z scored
-Z_AES = nanzscore(aesVec);
-Z_LARSt = nanzscore(larsT);
+Z_AES = nanzscore(FQs_Ex.AES_TOTAL);
+Z_LARSt = nanzscore(FQs_Ex.LARS_AI);
 %%%%%%%
 
 
@@ -1328,7 +1431,7 @@ for i=1:subj % each subject
     forceVec = D.maximumForce(i,:)';
     forceVec(forceVec<0) = nan;
     vigVec = D.vigour(i,:)';
-    vigVec_prop = D.vigprop(i,:)';
+    %vigVec_prop = D.vigprop(i,:)';
     
     % create a matrix of decision times that will be excluded from
     % the final decision matrix that corresponds to those DT which
@@ -1357,7 +1460,8 @@ for i=1:subj % each subject
             vigVec decVec Z_decVec reward effort                    ...
             apVec(i)*ones(length(choicesVec),1),                    ...
             Z_AES(i)*ones(length(choicesVec),1),                    ...
-            Z_LARSt(i)*ones(length(choicesVec),1),                  ...
+            Z_LARSt(i)*ones(length(choicesVec),1)
+            Composite(i)*ones(length(choicesVec),1)  ,                  ...
             RT_Slow(i)*ones(length(choicesVec),1)];
     end
 end
@@ -1372,7 +1476,8 @@ eff       = subData(:,4);
 ap        = subData(:,8);
 AES_Z     = subData(:,9);
 LARSt_Z   = subData(:,10);
-RT_slow   = subData(:,11);
+CompAp    = subData(:,11);
+RT_slow   = subData(:,12);
 
 
 
@@ -1386,7 +1491,7 @@ if 1
     rew=zscore(rew);
     eff=zscore(eff);
     ap = zscore(ap);
-    
+end
     %force=nanzscore(force);
     %lars = zscore(lars);
 
