@@ -11,8 +11,7 @@
     
 clear
 close all
-
-
+%test
 % Load data
 load interim_56 ;% this has reshaped choice arrays and is useful for some things
 load larsT56.mat; % Self assessment LARS
