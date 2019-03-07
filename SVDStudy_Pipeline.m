@@ -3,7 +3,6 @@
 % This includes data pre-processing, visualisation of data and analysis as
 % well as the produciton of key MRI regressors. 
 %% Performing relevant analyses including computational modelling. 
-% Components will therefore be:
 % 1. Converting excel sheet into a matlab table and extracting on excluded
 % data points. 
 % 2. Plotting a correlations table of all the questionnaires. 
@@ -14,19 +13,24 @@
 
 % first of all I want a simple visualisation of the entire group's
 % behavioura over the  course of the task. 
+
+% add shaded errorbar function to path and save. 
+addpath  '/Users/youssufsaleh/Documents/Master folder/Apples v2/raacampbell-shadedErrorBar-0dc4de5/'
+savepath pwd
+% create function handle for function which controls colors
 c = @cmu.colors;
 
 close all
 grp_rew_2D = squeeze(mean(freqmap,1))';
 H1=shadedErrorBar(1:6,nanmean(grp_rew_2D),   ...
     nanstd(grp_rew_2D./sqrt(size(D.R,1))),'lineprops',...
-    {'color', c('royal purple')},...
+    {'-.','color', c('royal purple')},...
     'patchSaturation',0.3);
 hold on
 grp_eff_2D = squeeze(mean(freqmap,2))';
 H2=shadedErrorBar(1:6,nanmean(grp_eff_2D),   ...
     nanstd(grp_eff_2D./sqrt(size(D.R,1))),'lineprops',...
-    {'color',c('air force blue')},  ...
+    {'-.','color',c('air force blue')},  ...
     'patchSaturation',0.3);
 axis square
 ylim([0 1.1]);xlim([0 7])
@@ -109,25 +113,12 @@ subj = size(D.R,1); %How many subjects?
 apVec=[]';
 for i = 1:subj
     if FQs_Ex.LARS_TOTAL(i)>-22 || FQs_Ex.AES_TOTAL(i) > 37
+    %if FQs_Ex.AES_TOTAL(i) > 37
+    %if FQs_Ex.Composite(i) > nanmedian(FQs_Ex.Composite) + ...
+            %nanstd(FQs_Ex.Composite)
         apVec(i)=1;
     else apVec(i)=0;
     end
-end
-% draw a plot of aesVec and LARS correlations
-if 0
-    close
-    figure()
-    h = scatterRegress(larsT,aesVec,'*','MarkerEdgeColor','k','LineWidth',1);
-    AX = h;
-    set(gca,'LineWidth',3)
-    xlim([-36 10])
-    ylabel('Apathy evaluation scale')
-    xlabel('Lille apathy rating scale')
-    title('Correlation between LARS and AES in 56 SVD patients')
-    set(gca,'fontSize',14,'fontWeight','normal');hold on;
-    plot(-22*ones(46,1),15:60,':k','LineWidth',1)
-    plot(-36:10,37*ones(47,1),':k','LineWidth',1)
-    
 end
     
 apVec = apVec';
@@ -191,10 +182,10 @@ for i=1:subj
     grpD.reject(i) = length(find(yesTrial(i,:)==0));
     grpD.mistake(i)= length(find(isnan(yesTrial(i,:))));
     grpD.trialsCorr(i)= length(find(~isnan(yesTrial(i,:)))); % how many trials after removing mistakes
-    grpD.fail(i) = length(find(yesTrial(i,:)==1 & D.reward(i,:)==0));
-    grpD.failCorr(i) = length(find(yesTrial(i,:)==1 & D.reward(i,:)==0))/grpD.trialsCorr(i);
-    grpD.failHighEff(i) = length(find(yesTrial(i,:)==1 & D.reward(i,:)==0 & D.effort(i,:)>0.6))/grpD.trialsCorr(i); % this metric erroneous as divides by ALL trials
-    grpD.failHighEff2(i) = length(find(yesTrial(i,:)==1 & D.reward(i,:)==0 & D.effort(i,:)>0.6));
+    grpD.fail(i) = length(find(yesTrial(i,:)==1 & D.stake(i,:)==0));
+    grpD.failCorr(i) = length(find(yesTrial(i,:)==1 & D.stake(i,:)==0))/grpD.trialsCorr(i);
+    grpD.failHighEff(i) = length(find(yesTrial(i,:)==1 & D.stake(i,:)==0 & D.effort(i,:)>0.6))/grpD.trialsCorr(i); % this metric erroneous as divides by ALL trials
+    grpD.failHighEff2(i) = length(find(yesTrial(i,:)==1 & D.stake(i,:)==0 & D.effort(i,:)>0.6));
 end
 
 accept=grpD.accept';
@@ -226,48 +217,7 @@ if 0
     mriAccept = grpD.accept(filter)';
     m = mean(mriAccept);
     mriAcc_demean = mriAccept-m;
-end
-if 0 % draw some other graphs of correlations
-    figure()
-    j = scatterRegress(aesVec,accept,'*','MarkerEdgeColor','k','LineWidth',1);
-    AX = j;
-    set(gca,'LineWidth',3)
-    xlim([15 50])
-    ylabel('Total offers accepted')
-    xlabel('Apathy Evaluation Scale')
-    title('Correlation between AES and accepted offers')
-    set(gca,'fontSize',14,'fontWeight','normal');hold on;
-    plot(37*ones(100,1),81:180,':r','LineWidth',1)
-    
-    
-    figure()
-    j = scatterRegress(larsT,accept,'*','MarkerEdgeColor','k','LineWidth',1);
-    AX = j;
-    set(gca,'LineWidth',3)
-    xlim([-35 5])
-    ylabel('Total Offers Accepted')
-    xlabel('LARS Total Score')
-    title('Correlation between LARS and accepted offers')
-    set(gca,'fontSize',14,'fontWeight','normal');hold on;
-    plot(-22*ones(100,1),81:180,':r','LineWidth',1)
 
-    
-    figure()
-    j = scatterRegress(larsSub(:,3),accept,'*','MarkerEdgeColor','k','LineWidth',1);
-    AX = j;
-    set(gca,'LineWidth',3)
-    xlim([-5 1])
-    ylabel('Total Offers Accepted')
-    xlabel('Action Initiation Subscale')
-    title('Correlation between Action initiation and accepted offers')
-    set(gca,'fontSize',14,'fontWeight','normal');hold on;
-    %plot(37*ones(100,1),81:180,':r','LineWidth',1)
-   
-end
-
-
- 
-% and plot smoothed choices
 close all
 %% *************** RESULTS - Offers accepted - RAW **********************
 
