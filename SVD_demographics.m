@@ -1,58 +1,6 @@
-%% Load all the data (always run this section first)
-clear all
-close all
-user = getenv('USER');
-if ispc
-    path=fullfile('C:','Users','battaallah','Documents','GitHub','CircleQuest_study01');
-else
-    path = fullfile('/Users',user,'Documents','GitHub','CircleQuest_study01');
-end
-addpath(genpath(fullfile(path, 'fcn')));
-cd(path);
+%% This script will determine the demographics for my study. 
 
-
-% Select all participants...
-allfiles = dir(fullfile(path, 'data','raw','*.mat'));
-for f = 1:size(allfiles,1)
-    subjNames{f}=extractBefore(extractAfter(allfiles(f).name,9),11);
-end
-subjNames = unique(subjNames);
-iexclude = find(strcmp(subjNames,'CQ01_YHC02') | strcmp(subjNames,'CQ01_YHC07') | strcmp(subjNames,'CQ01_YHC17'));
-subjNames(iexclude)=[]
-
-
-% Load questionnaires
-nQuestions.AMI = 18;
-nQuestions.AES = 14;
-nQuestions.IUS = 27;
-nQuestions.BIS = 30;
-nQuestions.BDI = 21;
-nQuestions.MCQ30 = 30;
-clear temp
-questionnaires = {'AMI', 'AES', 'IUS', 'BIS', 'BDI', 'MCQ30', 'Raven'}; % Enter here the questionnaires you want to load
-allquestions=[];
-for i = 1:length(questionnaires)
-    for f = 1:length(subjNames)
-        qdata=importQuestionnaire(fullfile(path,'data','questionnaires',[questionnaires{i} '*.csv']),questionnaires{i});
-        try temp(f,:) = qdata(qdata.participant==subjNames{f},:);
-        catch
-            temp(f,:) = array2table(NaN(1,size(qdata,2)));
-        end
-    end
-    quest.(questionnaires{i}) = temp;
-    quest.(questionnaires{i}){(ismissing(temp.participant)),:}=missing; % Replace missing participants by a row of NaNs
-    clear temp qdata
-    
-    if i<=6
-        for q = 1:nQuestions.(questionnaires{i})
-                allquestions = horzcat(allquestions,...
-                    quest.(questionnaires{i}).(sprintf('Q%.2d',q)));
-        end
-    else
-        allquestions = horzcat(allquestions,quest.Raven.total);
-    end
-end
- ap = quest.AMI.total>nanmedian(quest.AMI.total);
+ ap = FQs_Ex.;
 
 extra=importDemographics(fullfile(path,'data','demographics.xlsx'));
 extra(~ismember(extra.participant,subjNames),:)=[];
