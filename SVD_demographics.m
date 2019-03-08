@@ -1,26 +1,10 @@
 %% This script will determine the demographics for my study. 
 
- ap = FQs_Ex.;
-
-extra=importDemographics(fullfile(path,'data','demographics.xlsx'));
-extra(~ismember(extra.participant,subjNames),:)=[];
 
 
 
 %% QUESTIONNAIRES: correlation matrix
-clear temp
-for i = 1:length(questionnaires)
-    temp{i}=quest.(questionnaires{i}).total;
-end
-demographics=table(temp{:},'VariableNames',questionnaires);
-demographics.AMI = demographics.AMI./18;
-demographics.AMI_beh = quest.AMI.beh./6;
-demographics.AMI_social = quest.AMI.social./6;
-demographics.AMI_emo = quest.AMI.emo./6;
-[coeff,score,latent,tsquared,explained,mu]=pca(nanzscore([quest.AES.total,quest.AMI.total]),'NumComponents',1);
-demographics.ApathyScore = score;
-demographics.age = extra.age;
-demographics.yearsOfEducation = extra.yoe;
+
 
 % mycorrplot_1(totalScores)
 figure
@@ -47,10 +31,6 @@ t.Properties.RowNames = {'n','age','AMI','AMI_beh','AMI_soc','AMI_emo','AES','Ap
 writetable(t,...
     fullfile(path,'outputs','demographicTable.xls'),...
     'WriteRowNames',true);
-figure
-scatterRegress(demographics.age,demographics.AMI_beh);
-xlabel('Age (years)');
-ylabel('AMI behavioural score')
 
 
 

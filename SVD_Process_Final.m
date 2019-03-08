@@ -141,7 +141,7 @@ D.AUCB = AUCB;
 D.vigour = vigour;
 clear  hand block trialIndex R starttrial effort stake startStim startChoice endChoice endNotrial totalReward startresponse endresponse Yestrial reward maximumForce AUCA AUCB MVC1 MVC2
 
- save('AGT_SVD_Final');
+ 
 %% 
     
 
@@ -266,5 +266,5 @@ for i=1:size(d.R,1) % for each subject
     grpD.hand{subGroup} = hand;
 end
 
-
+save('AGT_SVD_Final');
 

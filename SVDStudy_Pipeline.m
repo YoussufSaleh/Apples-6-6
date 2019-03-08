@@ -223,6 +223,7 @@ close all
 
 % ************* Basic results - number of apples gathered, offers accepted
 % etc******************************
+c = @cmu.colors;
 close all
 numT=180; % use this to change acceptances to a proportion, if want raw just make it 1.
 aaa=accept/180;
