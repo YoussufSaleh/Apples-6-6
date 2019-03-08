@@ -31,8 +31,9 @@ t.Properties.RowNames = {'n','age','AMI','AMI_beh','AMI_soc','AMI_emo','AES','Ap
 writetable(t,...
     fullfile(path,'outputs','demographicTable.xls'),...
     'WriteRowNames',true);
+  
 
-
+Chi = array2table(horzcat(FQs_Ex.GenderM1, FQs_Ex.groupAlloc));
 
 
 

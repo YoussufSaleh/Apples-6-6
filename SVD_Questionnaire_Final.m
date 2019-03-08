@@ -143,10 +143,18 @@ t.Properties.RowNames = {'Age','Gender','LARS','AES','Composite Score (z-scored)
 writetable(t,...
    'demographicTable.csv',...
     'WriteRowNames',true);
+% create table for chisquared test. 
+Chi = array2table(horzcat(FQs_Ex.GenderM1, FQs_Ex.groupAlloc));
+Chi.Properties.VariableNames = {'Gender','apathy'};
+
+writetable(Chi,...
+   'GenderTable.csv',...
+    'WriteRowNames',true);
 
 
-
-
+% run this in jasp as a contingency table. Now we can go forth towards the
+% GLME knowing which factors to include in our analysis. Or do we? I think
+% it should be the computational model that is run next. 
 
 
 

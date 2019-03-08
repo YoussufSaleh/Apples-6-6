@@ -1357,7 +1357,7 @@ choice    = subData(:,2);
 Vigour    = subData(:,3);
 DT        = subData(:,4);
 Z_DT      = subData(:,5);
-rew       = subData(:,6);
+rew       = subData(:,3);
 eff       = subData(:,4);
 ap        = subData(:,8);
 AES_Z     = subData(:,9);
@@ -1376,8 +1376,8 @@ if 0
 end
 if 1
     rew=nanzscore(rew);
-    eff=nanzscore(eff);
-    ap = nanzscore(ap);
+    eff=nazscore(eff);
+    ap = zscore(ap);
 end
     %force=nanzscore(force);
     %lars = zscore(lars);
