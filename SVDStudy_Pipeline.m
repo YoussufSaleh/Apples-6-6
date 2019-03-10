@@ -1299,6 +1299,7 @@ linear=0;
 %zscores for qs.
 % AES and LARS z scored
 Z_AES = nanzscore(FQs_Ex.AES_TOTAL);
+Z_AES_E = nanzscore(FQs_Ex.AES_Emotional);
 Z_LARSt = nanzscore(FQs_Ex.LARS_AI);
 Z_Dep = nanzscore(FQs_Ex.BDI);
 %%%%%%%
@@ -1348,7 +1349,8 @@ for i=1:subj % each subject
             Z_LARSt(i)*ones(length(choicesVec),1),                  ...
             Composite(i)*ones(length(choicesVec),1),                ...
             Z_Dep(i)*ones(length(choicesVec),1),                    ...
-            RT_Slow(i)*ones(length(choicesVec),1)];
+            RT_Slow(i)*ones(length(choicesVec),1) ...
+            Z_AES_E(i)*ones(length(choicesVec),1)];
     end
 end
 
@@ -1360,12 +1362,12 @@ Z_DT      = subData(:,5);
 rew       = subData(:,6);
 eff       = subData(:,4);
 ap        = subData(:,8);
-AES_Z     = subData(:,9);
+AES_T     = subData(:,9);
 LARSt_Z   = subData(:,10);
 CompAp    = subData(:,11);
 Depression= subData(:,12);
 RT_slow   = subData(:,13);
-
+AES_E     = subData(:,14);
 
 
 %lars    = subData(:,6);
@@ -1382,7 +1384,7 @@ end
     %force=nanzscore(force);
     %lars = zscore(lars);
 
-    Design = table(choice,rew,eff,ap,AES_Z,LARSt_Z,CompAp,Depression, ...
+    Design = table(choice,rew,eff,ap,AES_T,AES_E,LARSt_Z,CompAp,Depression, ...
       subject);
 
 
@@ -1391,21 +1393,29 @@ clear aic glme_fit bicf
 linear =0; % which model type to run
 models = {    
     
-% first start with model you predict will be the best 
-'choice ~ rew*eff*CompAp + rew*eff*Depression  +  (1+eff+rew|subject)'
-% try this without all the random effects 
-'choice ~ rew*eff*CompAp + rew*eff*Depression  +  (1|subject)'
-%compare it with AES/Lars/Cutoff
-'choice ~ rew*eff*ap     + rew*eff*Depression  +  (1+eff+rew|subject)'
-'choice ~ rew*eff*AES_Z  +  rew*eff*Depression +  (1+eff+rew|subject)'
-'choice ~ rew*eff*LARSt_Z+  rew*eff*Depression +  (1+eff+rew|subject)'
-% again without the random effects parameters
-'choice ~ rew*eff*ap     + rew*eff*Depression  +  (1|subject)'
-'choice ~ rew*eff*AES_Z  +  rew*eff*Depression +  (1|subject)'
-'choice ~ rew*eff*LARSt_Z+  rew*eff*Depression +  (1|subject)'
+%  First model will look at composite apathy score  and depression as ...
+%continuous variables with 4 way interactions and apathy*depression
+%interactions taken out. 
+'choice ~ rew*eff*CompAp  + rew*eff*Depression +  (1|subject)'
+% Then just the AES as a continuous variable. 
+'choice ~ rew*eff*AES_T   + rew*eff*Depression +  (1|subject)'
+% Then the lars Total
+'choice ~ rew*eff*LARSt_Z + rew*eff*Depression +  (1|subject)'
+%use the apathy cut off (median split)
+'choice ~ rew*eff*ap + rew*eff*Depression +  (1|subject)'
+% full 4 model factorial using the same 4 apathy variables ... 
+%just to compare model fits and effects. 
+%'choice ~ rew*eff*CompAp*Depression +  (1|subject)'
+%'choice ~ rew*eff*AES_T*Depression +  (1|subject)'
+%'choice ~ rew*eff*LARSt_Z*Depression +  (1|subject)'
+%'choice ~ rew*eff*ap*Depression +  (1|subject)'
 
-% to generate reward and effort sensitivities. 
-'choice ~ rew*eff + (1+rew+eff|subject)'
+% Now look at models that do not include depression to compare model fits. 
+'choice ~ rew*eff*CompAp  +  (1|subject)'
+'choice ~ rew*eff*AES_T  +  (1|subject)'
+'choice ~ rew*eff*ap +  (1|subject)'
+% What about one that includes depression only
+'choice ~ rew*eff*Depression + (1|subject)'
 
 
 
@@ -1421,7 +1431,7 @@ if linear
 else
     for i=1:length(models)
         sprintf('starting model %g',i)
-        glme_fit{i}=fitglme(Design,models{i},'Distribution','binomial','fitmethod','Laplace');
+        glme_fit{i}=fitglme(Design,models{i},'Distribution','binomial','fitmethod','Laplace','PLIterations',1000000);
         aic(i)=glme_fit{i}.ModelCriterion.AIC;
         bicf(i)=glme_fit{i}.ModelCriterion.BIC;
                 
