@@ -8,6 +8,7 @@
 % 2. Plotting a correlations table of all the questionnaires. 
 % 3. Using a median split to look at 
 
+D.block = D.block(:,37:216);
 
 
 
@@ -1295,11 +1296,23 @@ plot(pp')
 % stake, effort and Yestrial within the D array should already have had the practise block removed (as long as above parts run)
 subData=[];
 linear=0;
+% I also want to create a categorical variable for post hoc analysis
+% looking specifically at reward level by category. This would possibly
+% explain the near significant result that we have. 
+for i = 1:subj
+  for t = 1:180
+    if D.stake(i,t) < 9 % low reward scores a 1. High reward scores 0. 
+      
+      D.catRew(i,t)=1;
+    else D.catRew(i,t)= 2;
+    end
+  end
+end
+
 
 %zscores for qs.
 % AES and LARS z scored
 Z_AES = nanzscore(FQs_Ex.AES_TOTAL);
-Z_AES_E = nanzscore(FQs_Ex.AES_Emotional);
 Z_LARSt = nanzscore(FQs_Ex.LARS_AI);
 Z_Dep = nanzscore(FQs_Ex.BDI);
 %%%%%%%
@@ -1316,8 +1329,8 @@ for i=1:subj % each subject
     forceVec = D.maximumForce(i,:)';
     forceVec(forceVec<0) = nan;
     vigVec = D.vigour(i,:)';
-    %vigVec_prop = D.vigprop(i,:)';
-    
+    catRew = D.catRew(i,:)';
+    block = D.block(i,:)';
     % create a matrix of decision times that will be excluded from
     % the final decision matrix that corresponds to those DT which
     % are more than 3 STD from the mean for that particular patient
@@ -1338,7 +1351,8 @@ for i=1:subj % each subject
         forceVec(removal)  = [];
         vigVec(removal)    = [];
         Z_decVec(removal)  = [];
-        
+        catRew(removal)    = [];
+        block(removal)     = [];
     end
     clear removal
     if ~linear
@@ -1349,8 +1363,9 @@ for i=1:subj % each subject
             Z_LARSt(i)*ones(length(choicesVec),1),                  ...
             Composite(i)*ones(length(choicesVec),1),                ...
             Z_Dep(i)*ones(length(choicesVec),1),                    ...
-            RT_Slow(i)*ones(length(choicesVec),1) ...
-            Z_AES_E(i)*ones(length(choicesVec),1)];
+            RT_Slow(i)*ones(length(choicesVec),1), ...
+            Z_AES_E(i)*ones(length(choicesVec),1), ...
+            catRew, block];
     end
 end
 
@@ -1368,9 +1383,8 @@ CompAp    = subData(:,11);
 Depression= subData(:,12);
 RT_slow   = subData(:,13);
 AES_E     = subData(:,14);
-
-
-%lars    = subData(:,6);
+catRew    = categorical(subData(:,15));
+Block     = categorical(subData(:,16));
 
 if 0
     % ****** IF WANT Quadratic effort *******
@@ -1380,17 +1394,19 @@ if 1
     rew=nanzscore(rew);
     eff=nanzscore(eff);
     ap = nanzscore(ap);
+    catRew = nanzscore(catRew);
+    Block = nanzscore(Block);
 end
     %force=nanzscore(force);
     %lars = zscore(lars);
 
     Design = table(choice,rew,eff,ap,AES_T,AES_E,LARSt_Z,CompAp,Depression, ...
-      subject);
+      subject,catRew,Block);
 
 
 %%
 clear aic glme_fit bicf
-linear =0; % which model type to run
+linear=0; % which model type to run
 models = {    
     
 %  First model will look at composite apathy score  and depression as ...
@@ -1399,6 +1415,8 @@ models = {
 'choice ~ rew*eff*CompAp  + rew*eff*Depression +  (1|subject)'
 % Then just the AES as a continuous variable. 
 'choice ~ rew*eff*AES_T   + rew*eff*Depression +  (1|subject)'
+% include block 
+'choice ~ rew*eff*AES_T*Block   + rew*eff*Depression*Block +  (1|subject)'
 % Then the lars Total
 'choice ~ rew*eff*LARSt_Z + rew*eff*Depression +  (1|subject)'
 %use the apathy cut off (median split)
@@ -1413,12 +1431,12 @@ models = {
 % Now look at models that do not include depression to compare model fits. 
 'choice ~ rew*eff*CompAp  +  (1|subject)'
 'choice ~ rew*eff*AES_T  +  (1|subject)'
+'choice ~ rew*eff*AES_T*Block  +  (1|subject)'
 'choice ~ rew*eff*ap +  (1|subject)'
 % What about one that includes depression only
 'choice ~ rew*eff*Depression + (1|subject)'
-
-
-
+% model which looks at the different levels of reward 
+'choice ~ catRew*AES_T + (1|subject)'
     };
 
 if linear
