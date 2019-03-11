@@ -8,6 +8,7 @@
 % 2. Plotting a correlations table of all the questionnaires. 
 % 3. Using a median split to look at 
 
+D.block = D.block(:,37:216);
 
 
 
@@ -1295,7 +1296,6 @@ plot(pp')
 % stake, effort and Yestrial within the D array should already have had the practise block removed (as long as above parts run)
 subData=[];
 linear=0;
-
 % I also want to create a categorical variable for post hoc analysis
 % looking specifically at reward level by category. This would possibly
 % explain the near significant result that we have. 
@@ -1304,7 +1304,7 @@ for i = 1:subj
     if D.stake(i,t) < 9 % low reward scores a 1. High reward scores 0. 
       
       D.catRew(i,t)=1;
-    else D.catRew(i,t)= 0;
+    else D.catRew(i,t)= 2;
     end
   end
 end
@@ -1330,7 +1330,7 @@ for i=1:subj % each subject
     forceVec(forceVec<0) = nan;
     vigVec = D.vigour(i,:)';
     catRew = D.catRew(i,:)';
-    
+    block = D.block(i,:)';
     % create a matrix of decision times that will be excluded from
     % the final decision matrix that corresponds to those DT which
     % are more than 3 STD from the mean for that particular patient
@@ -1352,6 +1352,7 @@ for i=1:subj % each subject
         vigVec(removal)    = [];
         Z_decVec(removal)  = [];
         catRew(removal)    = [];
+        block(removal)     = [];
     end
     clear removal
     if ~linear
@@ -1362,9 +1363,9 @@ for i=1:subj % each subject
             Z_LARSt(i)*ones(length(choicesVec),1),                  ...
             Composite(i)*ones(length(choicesVec),1),                ...
             Z_Dep(i)*ones(length(choicesVec),1),                    ...
-            RT_Slow(i)*ones(length(choicesVec),1) ...
-            Z_AES_E(i)*ones(length(choicesVec),1) ...
-            catRew];
+            RT_Slow(i)*ones(length(choicesVec),1), ...
+            Z_AES_E(i)*ones(length(choicesVec),1), ...
+            catRew, block];
     end
 end
 
@@ -1382,9 +1383,8 @@ CompAp    = subData(:,11);
 Depression= subData(:,12);
 RT_slow   = subData(:,13);
 AES_E     = subData(:,14);
-catRew    = subData(:,15);
-
-%lars    = subData(:,6);
+catRew    = (subData(:,15));
+Block     = (subData(:,16));
 
 if 0
     % ****** IF WANT Quadratic effort *******
@@ -1394,35 +1394,46 @@ if 1
     rew=nanzscore(rew);
     eff=nanzscore(eff);
     ap = nanzscore(ap);
+    catRew = nanzscore(catRew);
+    Block = nanzscore(Block);
 end
     %force=nanzscore(force);
     %lars = zscore(lars);
 
     Design = table(choice,rew,eff,ap,AES_T,AES_E,LARSt_Z,CompAp,Depression, ...
-      subject);
+      subject,catRew,Block);
 
 
 %%
 clear aic glme_fit bicf
-linear =0; % which model type to run
+linear=0; % which model type to run
 models = {    
     
-%  First model will look at composite apathy score  and depression as ...
-%continuous variables with 4 way interactions and apathy*depression
-%interactions taken out. 
-'choice ~ rew*eff*CompAp  + rew*eff*Depression +  (1|subject)'
-% Then just the AES as a continuous variable. 
+%  My Full model will look at Apathy depression and block effects.  
+% 4 way interactions will be taken out. I will compare 3 different
+% apathy scores. First Total AES as a continuous variable. 
+'choice ~ rew*eff*AES_T   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
+% then the composite apathy variable that I created from AES and LARS total
+% scores. This is called CompAp
+'choice ~ rew*eff*CompAp   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
+% Then the median split cut off of my composite apathy score. This is
+% called ap. 
+'choice ~ rew*eff*ap   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
+% finally the LARS total, which was very noisy. 
+'choice ~ rew*eff*LARSt_Z   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
+% The next three models does not account for block effects. It uses the
+% same three apathy scores used above. AES first. 
+'choice ~ rew*eff*AES_T   + rew*eff*Depression +  (1|subject)'
+% CompAp next. 
 'choice ~ rew*eff*AES_T   + rew*eff*Depression +  (1|subject)'
 % Then the lars Total
 'choice ~ rew*eff*LARSt_Z + rew*eff*Depression +  (1|subject)'
-%use the apathy cut off (median split)
-'choice ~ rew*eff*ap + rew*eff*Depression +  (1|subject)'
-% full 4 model factorial using the same 4 apathy variables ... 
-%just to compare model fits and effects. 
-%'choice ~ rew*eff*CompAp*Depression +  (1|subject)'
-%'choice ~ rew*eff*AES_T*Depression +  (1|subject)'
-%'choice ~ rew*eff*LARSt_Z*Depression +  (1|subject)'
-%'choice ~ rew*eff*ap*Depression +  (1|subject)'
+
+% include block 
+'choice ~ rew*eff*AES_T   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
+'choice ~ rew*eff*CompAp   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
+'choice ~ rew*eff*ap   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
+'choice ~ rew*eff*LARSt_Z   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
 
 % Now look at models that do not include depression to compare model fits. 
 'choice ~ rew*eff*CompAp  +  (1|subject)'
@@ -1430,9 +1441,6 @@ models = {
 'choice ~ rew*eff*ap +  (1|subject)'
 % What about one that includes depression only
 'choice ~ rew*eff*Depression + (1|subject)'
-
-
-
     };
 
 if linear

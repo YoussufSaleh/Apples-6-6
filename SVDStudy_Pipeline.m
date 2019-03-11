@@ -1383,8 +1383,8 @@ CompAp    = subData(:,11);
 Depression= subData(:,12);
 RT_slow   = subData(:,13);
 AES_E     = subData(:,14);
-catRew    = categorical(subData(:,15));
-Block     = categorical(subData(:,16));
+catRew    = (subData(:,15));
+Block     = (subData(:,16));
 
 if 0
     % ****** IF WANT Quadratic effort *******
@@ -1409,34 +1409,34 @@ clear aic glme_fit bicf
 linear=0; % which model type to run
 models = {    
     
-%  First model will look at composite apathy score  and depression as ...
-%continuous variables with 4 way interactions and apathy*depression
-%interactions taken out. 
-'choice ~ rew*eff*CompAp  + rew*eff*Depression +  (1|subject)'
-% Then just the AES as a continuous variable. 
+%  My Full model will look at Apathy depression and block effects.  
+% 4 way interactions will be taken out. I will compare 3 different
+% apathy scores. First Total AES as a continuous variable. 
+'choice ~ rew*eff*AES_T   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
+% then the composite apathy variable that I created from AES and LARS total
+% scores. This is called CompAp
+'choice ~ rew*eff*CompAp   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
+% Then the median split cut off of my composite apathy score. This is
+% called ap. 
+'choice ~ rew*eff*ap   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
+% finally the LARS total, which was very noisy. 
+'choice ~ rew*eff*LARSt_Z   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
+% The next three models does not account for block effects. It uses the
+% same three apathy scores used above. AES first. 
 'choice ~ rew*eff*AES_T   + rew*eff*Depression +  (1|subject)'
-% include block 
-'choice ~ rew*eff*AES_T*Block   + rew*eff*Depression*Block +  (1|subject)'
+% Composite apathy score next. 
+'choice ~ rew*eff*AES_T   + rew*eff*Depression +  (1|subject)'
+% Apathy cut off (median split)
+'choice ~ rew*eff*ap + rew*eff*Depression +  (1|subject)'
 % Then the lars Total
 'choice ~ rew*eff*LARSt_Z + rew*eff*Depression +  (1|subject)'
-%use the apathy cut off (median split)
-'choice ~ rew*eff*ap + rew*eff*Depression +  (1|subject)'
-% full 4 model factorial using the same 4 apathy variables ... 
-%just to compare model fits and effects. 
-%'choice ~ rew*eff*CompAp*Depression +  (1|subject)'
-%'choice ~ rew*eff*AES_T*Depression +  (1|subject)'
-%'choice ~ rew*eff*LARSt_Z*Depression +  (1|subject)'
-%'choice ~ rew*eff*ap*Depression +  (1|subject)'
-
 % Now look at models that do not include depression to compare model fits. 
-'choice ~ rew*eff*CompAp  +  (1|subject)'
 'choice ~ rew*eff*AES_T  +  (1|subject)'
-'choice ~ rew*eff*AES_T*Block  +  (1|subject)'
+'choice ~ rew*eff*CompAp  +  (1|subject)'
 'choice ~ rew*eff*ap +  (1|subject)'
-% What about one that includes depression only
+% What about one that includes depression only. This to see how well
+% depression independently explains the data. 
 'choice ~ rew*eff*Depression + (1|subject)'
-% model which looks at the different levels of reward 
-'choice ~ catRew*AES_T + (1|subject)'
     };
 
 if linear
