@@ -1193,8 +1193,9 @@ close all
 
 depVec=[];
 for i=1:subj
-    if FQs_Ex.BDI(i)<=13
-        depVec(i)=0;
+    if FQs_Ex.Composite(i)< nanmedian(FQs_Ex.Composite)
+      
+      depVec(i)=0;
     else
         depVec(i)=1;
     end
@@ -1214,7 +1215,7 @@ for i=1:2
     axis square
     ylim([0 1.1]);xlim([0 7])
     ax=gca;
-    if i==1
+    if i==2
         set(ax,'fontWeight','bold','fontSize',20,'XTick',[1:1:6],'XTickLabel',{'10','24','38','52','66','80'})
         xlabel('Effort level (% MVC)')
         ylabel('Proportion of offers accepted')
@@ -1229,7 +1230,7 @@ end
 bdi_full=xxx;
 qq=[1 2 3 5 6 7 19 9 10 11 14]; % dysphoria subscale
 
-BDI_dys=[];
+BDI_dys=;
 %BDI_dys_hc=[];
 for i=1:size(bdi_full,1)
     BDI_dys(i)=sum(bdi_full(i,qq));
@@ -1298,23 +1299,13 @@ subData=[];
 linear=0;
 % I also want to create a categorical variable for post hoc analysis
 % looking specifically at reward level by category. This would possibly
-% explain the near significant result that we have. 
-for i = 1:subj
-  for t = 1:180
-    if D.stake(i,t) < 9 % low reward scores a 1. High reward scores 0. 
-      
-      D.catRew(i,t)=1;
-    else D.catRew(i,t)= 2;
-    end
-  end
-end
 
 
 %zscores for qs.
 % AES and LARS z scored
-Z_AES = nanzscore(FQs_Ex.AES_TOTAL);
-Z_LARSt = nanzscore(FQs_Ex.LARS_AI);
-Z_Dep = nanzscore(FQs_Ex.BDI);
+AES_total = FQs_Ex.AES_TOTAL;
+LARS_Total = FQs_Ex.LARS_TOTAL;
+BDI = FQs_Ex.BDI;
 %%%%%%%
 
 
@@ -1329,7 +1320,6 @@ for i=1:subj % each subject
     forceVec = D.maximumForce(i,:)';
     forceVec(forceVec<0) = nan;
     vigVec = D.vigour(i,:)';
-    catRew = D.catRew(i,:)';
     block = D.block(i,:)';
     % create a matrix of decision times that will be excluded from
     % the final decision matrix that corresponds to those DT which
@@ -1351,7 +1341,6 @@ for i=1:subj % each subject
         forceVec(removal)  = [];
         vigVec(removal)    = [];
         Z_decVec(removal)  = [];
-        catRew(removal)    = [];
         block(removal)     = [];
     end
     clear removal
@@ -1359,13 +1348,13 @@ for i=1:subj % each subject
         subData = [subData;i*ones(length(choicesVec),1) choicesVec, ...
             vigVec decVec Z_decVec reward effort                    ...
             apVec(i)*ones(length(choicesVec),1),                    ...
-            Z_AES(i)*ones(length(choicesVec),1),                    ...
-            Z_LARSt(i)*ones(length(choicesVec),1),                  ...
+            AES_total(i)*ones(length(choicesVec),1),                ...
+            LARS_Total(i)*ones(length(choicesVec),1),               ...
             Composite(i)*ones(length(choicesVec),1),                ...
-            Z_Dep(i)*ones(length(choicesVec),1),                    ...
-            RT_Slow(i)*ones(length(choicesVec),1), ...
-            Z_AES_E(i)*ones(length(choicesVec),1), ...
-            catRew, block];
+            BDI(i)*ones(length(choicesVec),1),                      ...
+            RT_Slow(i)*ones(length(choicesVec),1),                  ...
+            Z_AES_E(i)*ones(length(choicesVec),1),                  ...
+            block];
     end
 end
 
@@ -1375,16 +1364,15 @@ Vigour    = subData(:,3);
 DT        = subData(:,4);
 Z_DT      = subData(:,5);
 rew       = subData(:,6);
-eff       = subData(:,4);
+eff       = subData(:,7);
 ap        = subData(:,8);
 AES_T     = subData(:,9);
-LARSt_Z   = subData(:,10);
+LARS_T= subData(:,10);
 CompAp    = subData(:,11);
 Depression= subData(:,12);
 RT_slow   = subData(:,13);
 AES_E     = subData(:,14);
-catRew    = (subData(:,15));
-Block     = (subData(:,16));
+Block     = (subData(:,15));
 
 if 0
     % ****** IF WANT Quadratic effort *******
@@ -1394,49 +1382,64 @@ if 1
     rew=nanzscore(rew);
     eff=nanzscore(eff);
     ap = nanzscore(ap);
-    catRew = nanzscore(catRew);
     Block = nanzscore(Block);
+    AES_T = nanzscore(AES_T);
+    LARS_T = nanzscore(LARS_T);
+    Depression = nanzscore(Depression);
 end
     %force=nanzscore(force);
     %lars = zscore(lars);
 
-    Design = table(choice,rew,eff,ap,AES_T,AES_E,LARSt_Z,CompAp,Depression, ...
-      subject,catRew,Block);
+    Design = table(choice,rew,eff,ap,AES_T,LARS_T,CompAp,Depression, ...
+      subject,Block);
 
 
 %%
-clear aic glme_fit bicf
+clear aic glme_fit bic
 linear=0; % which model type to run
 models = {    
     
 %  My Full model will look at Apathy depression and block effects.  
 % 4 way interactions will be taken out. I will compare 3 different
 % apathy scores. First Total AES as a continuous variable. 
-'choice ~ rew*eff*AES_T   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
+'choice ~ rew*eff*AES_T    + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
 % then the composite apathy variable that I created from AES and LARS total
 % scores. This is called CompAp
 'choice ~ rew*eff*CompAp   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
 % Then the median split cut off of my composite apathy score. This is
 % called ap. 
-'choice ~ rew*eff*ap   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
+'choice ~ rew*eff*ap       + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
 % finally the LARS total, which was very noisy. 
-'choice ~ rew*eff*LARSt_Z   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
+'choice ~ rew*eff*LARS_T   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
 % The next three models does not account for block effects. It uses the
 % same three apathy scores used above. AES first. 
-'choice ~ rew*eff*AES_T   + rew*eff*Depression +  (1|subject)'
+'choice ~ rew*eff*AES_T    + rew*eff*Depression +  (1|subject)'
 % Composite apathy score next. 
-'choice ~ rew*eff*AES_T   + rew*eff*Depression +  (1|subject)'
+'choice ~ rew*eff*CompAp   + rew*eff*Depression +  (1|subject)'
 % Apathy cut off (median split)
-'choice ~ rew*eff*ap + rew*eff*Depression +  (1|subject)'
+'choice ~ rew*eff*ap       + rew*eff*Depression +  (1|subject)'
 % Then the lars Total
-'choice ~ rew*eff*LARSt_Z + rew*eff*Depression +  (1|subject)'
+'choice ~ rew*eff*LARS_T   + rew*eff*Depression +  (1|subject)'
 % Now look at models that do not include depression to compare model fits. 
+'choice ~ rew*eff*AES_T  + rew*eff*Block  +  (1|subject)'
+'choice ~ rew*eff*CompAp + rew*eff*Block +  (1|subject)'
+'choice ~ rew*eff*ap     + rew*eff*Block     +  (1|subject)'
+'choice ~ rew*eff*LARS_T + rew*eff*Block +  (1|subject)'
+% now just look at apathy
 'choice ~ rew*eff*AES_T  +  (1|subject)'
-'choice ~ rew*eff*CompAp  +  (1|subject)'
-'choice ~ rew*eff*ap +  (1|subject)'
+'choice ~ rew*eff*CompAp +  (1|subject)'
+'choice ~ rew*eff*ap     + (1|subject)'
+'choice ~ rew*eff*LARS_T +  (1|subject)'
 % What about one that includes depression only. This to see how well
 % depression independently explains the data. 
 'choice ~ rew*eff*Depression + (1|subject)'
+
+% how about models that include random effects of reward and effort?
+%'choice ~ rew*eff*AES_T    + rew*eff*Depression + rew*eff*Block   +  (1+rew+eff|subject)'
+%'choice ~ rew*eff*CompAp    + rew*eff*Depression + rew*eff*Block   +  (1+rew+eff|subject)'
+%'choice ~ rew*eff*ap    + rew*eff*Depression + rew*eff*Block   +  (1+rew+eff|subject)'
+%'choice ~ rew*eff*LARS_T    + rew*eff*Depression + rew*eff*Block   +  (1+rew+eff|subject)'
+
     };
 
 if linear
@@ -1451,13 +1454,13 @@ else
         sprintf('starting model %g',i)
         glme_fit{i}=fitglme(Design,models{i},'Distribution','binomial','fitmethod','Laplace','PLIterations',1000000);
         aic(i)=glme_fit{i}.ModelCriterion.AIC;
-        bicf(i)=glme_fit{i}.ModelCriterion.BIC;
+        bic(i)=glme_fit{i}.ModelCriterion.BIC;
                 
 
     end
 end
 aic=aic-min(aic);
-bicf=bicf-min(bicf);
+bic=bic-min(bic);
 
 if 0
     save('glme_fit_lin_cat','models','glme_fit')
