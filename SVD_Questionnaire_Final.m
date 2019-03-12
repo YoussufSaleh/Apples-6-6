@@ -15,7 +15,7 @@ raw = raw(2:end,:);
 raw(cellfun(@(x) ~isempty(x) && isnumeric(x) && isnan(x),raw)) = {''};
 stringVectors = string(raw(:,[1,16,17,18,19]));
 stringVectors(ismissing(stringVectors)) = '';
-raw = raw(:,[2,3,4,5,6,7,8,9,10,11,12,13,14,15]);
+raw = raw(:,[2,3,4,5,6,7,8,9,10,11,12,13,14,15 20]);
 
 %% Replace non-numeric cells with NaN
 R = cellfun(@(x) ~isnumeric(x) && ~islogical(x),raw); % Find non-numeric cells
@@ -43,6 +43,7 @@ Qs_Final_raw.Other = data(:,11);
 Qs_Final_raw.BDI = data(:,12);
 Qs_Final_raw.ACE_Total = data(:,13);
 Qs_Final_raw.Excluded = data(:,14);
+Qs_Final_raw.dysphoria = data(:,15);
 Qs_Final_raw.FullStructural = stringVectors(:,3);
 Qs_Final_raw.FullDiffusion30 = stringVectors(:,4);
 Qs_Final_raw.FullDiffusion60 = stringVectors(:,5);
@@ -126,11 +127,11 @@ FQs_Ex.groupAlloc = apVec;
 
 % Demographics table
 clear m s M S t
-m=varfun(@nanmean,FQs_Ex(:,[2 3 7 8 13 14 15 20]),'GroupingVariable',{'groupAlloc'});
-s=varfun(@nanstd,FQs_Ex(:,[2 3 7 8 13 14 15 20]),'GroupingVariable',{'groupAlloc'});
+m=varfun(@nanmean,FQs_Ex(:,[2 3 7 8 13 14 15 20 21]),'GroupingVariable',{'groupAlloc'});
+s=varfun(@nanstd,FQs_Ex(:,[2 3 7 8 13 14 15 20 21]),'GroupingVariable',{'groupAlloc'});
 
-[h p] = ttest2(table2array(FQs_Ex(FQs_Ex.groupAlloc==1,[2 3 7 8 13 14 15])), ...
-  table2array(FQs_Ex(FQs_Ex.groupAlloc==0,[2 3 7 8 13 14 15])));
+[h p] = ttest2(table2array(FQs_Ex(FQs_Ex.groupAlloc==1,[2 3 7 8 13 14 15 20])), ...
+  table2array(FQs_Ex(FQs_Ex.groupAlloc==0,[2 3 7 8 13 14 15 20])));
 
 M = table2array(m(:,3:end));
 S = table2array(s(:,3:end));
@@ -138,7 +139,7 @@ S = table2array(s(:,3:end));
 t = array2table(horzcat(M(1,:)',S(1,:)',M(2,:)',S(2,:)',p'));
 t.Properties.VariableNames = {'lessApathetic_mean','lessApathetic_SD','moreApathetic_mean','moreApathetic_SD','Pvalue'};
 
-t.Properties.RowNames = {'Age','Gender','LARS','AES','Composite Score (z-scored)','BDI','ACE'};
+t.Properties.RowNames = {'Age','Gender','LARS','AES','Composite Score (z-scored)','BDI','ACE','dysphoria'};
  
 writetable(t,...
    'demographicTable.csv',...

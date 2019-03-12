@@ -334,14 +334,19 @@ end
 %% *********** RESULTS - EFFECTS OF REWARD AND EFFORT *************
 % Plot raw choice proportions in expanded form
 close all
-figure()
+subplot(1,2,1)
 for i=1:6
     errorBarPlot(squeeze(choices(i,:,apVec==0))','--','LineWidth',5);hold on
+    legend('1','2','3','4','5','6')
+    title('non apathetic')
+    colormap
 end
 set(gca,'ColorOrderIndex',1);
+subplot(1,2,2)
 for i=1:6
     errorBarPlot(squeeze(choices(i,:,apVec==1))',':','LineWidth',5);hold on
 end
+makeSubplotScalesEqual(1,2)
 
 
 %%
@@ -1169,6 +1174,8 @@ legend('Block 1','Block 2','Block 3','Block 4','Block 5');
 ax=gca;
 set(ax,'fontWeight','bold','fontSize',20,'XTick',[1:6])
 ylim([0.2 1.1]);xlim([0 7]);
+title('Non-Ap vs Block')
+
 figure();hold on
 for i=1:5 % for each block
     errorBarPlot(squeeze(nanmean(grpD.choicemap{1}(:,:,apVec==1,i),1))','LineWidth',3);
@@ -1176,7 +1183,7 @@ end
 legend('Block 1','Block 2','Block 3','Block 4','Block 5');
 ax=gca;
 set(ax,'fontWeight','bold','fontSize',20,'XTick',[1:6])
-ylim([0.2 1.1]);xlim([0 7]);
+ylim([0.1 1.1]);xlim([0 7]);
 %figure();hold on
 %for i=1:5 % for each block
  %   errorBarPlot(squeeze(nanmean(grpD_HC.choicemap{1}(:,:,:,i),1))','LineWidth',3);
@@ -1184,7 +1191,8 @@ ylim([0.2 1.1]);xlim([0 7]);
 legend('Block 1','Block 2','Block 3','Block 4','Block 5');
 ax=gca;
 set(ax,'fontWeight','bold','fontSize',20,'XTick',[1:6])
-ylim([0.2 1.1]);xlim([0 7]);
+ylim([0.1 1.1]);xlim([0 7]);
+title('Ap vs blocks')
 
 %% ******************** Depression Effects   *************************
 % Dysphoria subscale does not really split apathetic group up (using median
@@ -1228,9 +1236,8 @@ end
 %% Dysphoria subscale
 %load bdi_full_cad
 bdi_full=xxx;
-qq=[1 2 3 5 6 7 19 9 10 11 14]; % dysphoria subscale
+qq=[1 2 3 5 6 7 8 19 9 10 11 14]; % dysphoria subscale
 
-BDI_dys=;
 %BDI_dys_hc=[];
 for i=1:size(bdi_full,1)
     BDI_dys(i)=sum(bdi_full(i,qq));
@@ -1374,9 +1381,9 @@ RT_slow   = subData(:,13);
 AES_E     = subData(:,14);
 Block     = (subData(:,15));
 
-if 0
+if 1
     % ****** IF WANT Quadratic effort *******
-    eff = eff.^2;
+    eff = eff.^3;
 end
 if 1
     rew=nanzscore(rew);
@@ -1421,25 +1428,29 @@ models = {
 % Then the lars Total
 'choice ~ rew*eff*LARS_T   + rew*eff*Depression +  (1|subject)'
 % Now look at models that do not include depression to compare model fits. 
+'choice ~ AES_T*rew  + AES_T*eff +  (1|subject)'
 'choice ~ rew*eff*AES_T  + rew*eff*Block  +  (1|subject)'
+
 'choice ~ rew*eff*CompAp + rew*eff*Block +  (1|subject)'
 'choice ~ rew*eff*ap     + rew*eff*Block     +  (1|subject)'
 'choice ~ rew*eff*LARS_T + rew*eff*Block +  (1|subject)'
 % now just look at apathy
 'choice ~ rew*eff*AES_T  +  (1|subject)'
+'choice ~ rew*eff*AES_T  + Depression +  (1|subject)'
+
 'choice ~ rew*eff*CompAp +  (1|subject)'
 'choice ~ rew*eff*ap     + (1|subject)'
 'choice ~ rew*eff*LARS_T +  (1|subject)'
+'choice ~ rew*eff*Block     + (1|subject)'
 % What about one that includes depression only. This to see how well
 % depression independently explains the data. 
 'choice ~ rew*eff*Depression + (1|subject)'
 
-% how about models that include random effects of reward and effort?
-%'choice ~ rew*eff*AES_T    + rew*eff*Depression + rew*eff*Block   +  (1+rew+eff|subject)'
-%'choice ~ rew*eff*CompAp    + rew*eff*Depression + rew*eff*Block   +  (1+rew+eff|subject)'
-%'choice ~ rew*eff*ap    + rew*eff*Depression + rew*eff*Block   +  (1+rew+eff|subject)'
-%'choice ~ rew*eff*LARS_T    + rew*eff*Depression + rew*eff*Block   +  (1+rew+eff|subject)'
-
+% how about simpler one way effects 
+'choice ~ rew*eff + (1|subject)'
+'choice ~ Block + (1|subject)'
+'choice ~ AES_T + (1|subject)'
+'choice ~ Depression + (1|subject)'
     };
 
 if linear
@@ -1468,6 +1479,13 @@ end
 if 0 % save outputs
 save('glme_fitPD_Z','models','glme_fit')
 end
+
+
+%% view p values from all models, for a given effect
+effect = '^rew:(AES_T|CompAp|LARS_T|ap)$';
+effect = '^rew:eff$';
+cellfun( @(x) x.Coefficients.pValue( find(cellfun(@any,regexp(x.CoefficientNames,effect))) ) , glme_fit , 'uni',0)
+
 
 
 %% Analysis for Force. 
