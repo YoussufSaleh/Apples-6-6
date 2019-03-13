@@ -79,7 +79,7 @@ save('Questionnaires_final','FQs_Ex','Qs_Final_raw');
 % it contains a function with the same name that does something different. 
 %rmpath  '/Users/youssufsaleh/Documents/Master folder/Apples v2/matlib'
 % use this instead if your working on your laptop
-rmpath  '/Users/youssufsaleh/Documents/Master/Apples_v2/matlib'
+rmpath  '/Users/youssufsaleh/Documents/Master folder/Apples v2/matlib'
 
 [R,PValue] = corrplot(FQs_Ex(:,{'Age','LARS_TOTAL' 'LARS_E','LARS_AI','LARS_SA', ...
  'AES_TOTAL','AES_Cognitive','AES_Behavioural', ...
@@ -127,11 +127,11 @@ FQs_Ex.groupAlloc = apVec;
 
 % Demographics table
 clear m s M S t
-m=varfun(@nanmean,FQs_Ex(:,[2 3 7 8 13 14 15 20 21]),'GroupingVariable',{'groupAlloc'});
-s=varfun(@nanstd,FQs_Ex(:,[2 3 7 8 13 14 15 20 21]),'GroupingVariable',{'groupAlloc'});
+m=varfun(@nanmean,FQs_Ex(:,[2 3 7 8 13 14 15 21]),'GroupingVariable',{'groupAlloc'});
+s=varfun(@nanstd,FQs_Ex(:,[2 3 7 8 13 14 15 21]),'GroupingVariable',{'groupAlloc'});
 
-[h p] = ttest2(table2array(FQs_Ex(FQs_Ex.groupAlloc==1,[2 3 7 8 13 14 15 20])), ...
-  table2array(FQs_Ex(FQs_Ex.groupAlloc==0,[2 3 7 8 13 14 15 20])));
+[h p] = ttest2(table2array(FQs_Ex(FQs_Ex.groupAlloc==1,[2 3 7 8 13 14 15])), ...
+  table2array(FQs_Ex(FQs_Ex.groupAlloc==0,[2 3 7 8 13 14 15])));
 
 M = table2array(m(:,3:end));
 S = table2array(s(:,3:end));
@@ -139,7 +139,7 @@ S = table2array(s(:,3:end));
 t = array2table(horzcat(M(1,:)',S(1,:)',M(2,:)',S(2,:)',p'));
 t.Properties.VariableNames = {'lessApathetic_mean','lessApathetic_SD','moreApathetic_mean','moreApathetic_SD','Pvalue'};
 
-t.Properties.RowNames = {'Age','Gender','LARS','AES','Composite Score (z-scored)','BDI','ACE','dysphoria'};
+t.Properties.RowNames = {'Age','Gender','LARS','AES','Composite Score (z-scored)','BDI','ACE'};
  
 writetable(t,...
    'demographicTable.csv',...

@@ -101,7 +101,7 @@ end
 
 
 
-clear
+
 close all
 
 % Load Questionnaire data after exlusion
@@ -113,9 +113,9 @@ subj = size(D.R,1); %How many subjects?
 % create apathy vector (~debatable on exactly how to categorise patients)
 apVec=[]';
 for i = 1:subj
-    if FQs_Ex.LARS_TOTAL(i)>-22 || FQs_Ex.AES_TOTAL(i) > 37
+    %if FQs_Ex.LARS_TOTAL(i)>-22 || FQs_Ex.AES_TOTAL(i) > 37
     %if FQs_Ex.AES_TOTAL(i) > 37
-    %if FQs_Ex.Composite(i) > nanmedian(FQs_Ex.Composite) + ...
+    if FQs_Ex.Composite(i) > nanmedian(FQs_Ex.Composite) 
             %nanstd(FQs_Ex.Composite)
         apVec(i)=1;
     else apVec(i)=0;
@@ -307,29 +307,6 @@ xlabel('Trial number')
 ylabel('Acceptance rate (smoothed)')
 title('Smoothed (36) response rates')
 
-
-% ****************  And plot correlation between lars_AI and acceptance *****************
-figure();hold on
-scatterRegress(larsSub56(:,3),accept/180,'MarkerEdgeColor',[0.5 0.5 0.5],'LineWidth',5)
-ax=gca;
-lsline(ax);
-h = lsline(ax);
-set(h,'LineWidth',3,'Color',[0.7 0.7 0.7])
-
-ylabel('Proportion offers accepted')
-xlabel('Action initiation subscale of LARS')
-set(ax,'fontWeight','bold','FontSize',20,'YTick',0.2:0.2:1)
-xlim([-4.5 1.5]);ylim([0.2 1.1])
-axis square
-
-if 0
-figure()
-errorBarPlot(cumAccept(apVec==0,:),'LineWidth',1);
-hold on; errorBarPlot(cumAccept(apVec==1,:),'LineWidth',1);
-xlim([0 200]); ylim ([0 200]);
-title('cumulative offers accepted across experiment')
-legend('No Apathy','Apathy')
-end
 
 %% *********** RESULTS - EFFECTS OF REWARD AND EFFORT *************
 % Plot raw choice proportions in expanded form
@@ -993,29 +970,6 @@ xlim([0.5 2.5])
 ylim([0 5])
 title('Average Decision time is Longer in apathy')
 
-%lets see what it looks like transformed. 
-DT_transform = log(DT);
-close
-figure() % First just plot mean dt for the 3 groups
-
-%bar(1,mean(nanmean(decisionTime_HC,2)),'FaceColor',[0.7 0.7 0.7]);hold on;
-bar(1,nanmean(nanmean(DT_transform(ap==0,:),2)),'FaceColor',color1);hold on
-bar(2,nanmean(nanmean(DT_transform(ap==1,:),2)),'FaceColor',color2);
-if 1
- %   plot(vecHC,nanmean(decisionTime_HC,2),'.','MarkerSize',20,'MarkerEdgeColor',[0.5 0.5 0.5]);hold on
-    plot(vecnoA,nanmean(DT_transform(ap==0,:),2),'.','MarkerSize',20,'MarkerEdgeColor',[0.5 0.5 0.5])
-    plot(vecA,nanmean(DT_transform(ap==1,:),2),'.','MarkerSize',20,'MarkerEdgeColor',[0.5 0.5 0.5])
-end
-%errorbar(1,mean(nanmean(decisionTime_HC,2)),std(nanmean(decisionTime_HC,2))./sqrt(19),'k','LineWidth',3);
-errorbar(1,nanmean(nanmean(DT_transform(ap==0,:),2)),std(nanmean(DT_transform(ap==0,:),2))./sqrt(length(find(ap==0))),'k','LineWidth',3);
-errorbar(2,nanmean(nanmean(DT_transform(ap==1,:),2)),std(nanmean(DT_transform(ap==1,:),2))./sqrt(length(find(ap==1))),'k','LineWidth',3)
-ax=gca;
-set(ax,'fontWeight','bold','fontSize',20,'XTick',1:2,'XTickLabel',{'SVD-noAp','SVDAp'})
-ylabel('Decision time (s)')
-xlim([0.5 2.5])
-%ylim([-5 5])
-title('Average Decision time is Longer in apathy')
-
 
 % Now Yes versus No trials  ****************
 
@@ -1201,7 +1155,7 @@ close all
 
 depVec=[];
 for i=1:subj
-    if FQs_Ex.Composite(i)< nanmedian(FQs_Ex.Composite)
+    if FQs_Ex.AES_TOTAL(i) < 31
       
       depVec(i)=0;
     else
@@ -1315,6 +1269,10 @@ LARS_Total = FQs_Ex.LARS_TOTAL;
 BDI = FQs_Ex.BDI;
 %%%%%%%
 
+% this is an option to redefine cut offs 
+if 1 
+    ap = 
+
 
 for i=1:subj % each subject
     choicesVec = D.Yestrial(i,:)';
@@ -1326,7 +1284,7 @@ for i=1:subj % each subject
     %decVec(isnan(decVec))=0;
     forceVec = D.maximumForce(i,:)';
     forceVec(forceVec<0) = nan;
-    vigVec = D.vigour(i,:)';
+   % vigVec = D.vigour(i,:)';
     block = D.block(i,:)';
     % create a matrix of decision times that will be excluded from
     % the final decision matrix that corresponds to those DT which
@@ -1335,7 +1293,7 @@ for i=1:subj % each subject
     RT_Slow = abs(dtind - nanmean(dtind)) <= 3.*nanstd(dtind);
     a=1;
     for j = 1:length(decVec) %for each of the 180 trials
-        if decVec(j) < 0.4
+        if decVec(j) < 0.4 || decVec(j) > 6.0
             removal(a) = j; %create vector of trials to remove
             a=a+1;
         end
@@ -1346,40 +1304,39 @@ for i=1:subj % each subject
         effort(removal)    = [];
         decVec(removal)    = [];
         forceVec(removal)  = [];
-        vigVec(removal)    = [];
+       % vigVec(removal)    = [];
         Z_decVec(removal)  = [];
         block(removal)     = [];
     end
     clear removal
     if ~linear
         subData = [subData;i*ones(length(choicesVec),1) choicesVec, ...
-            vigVec decVec Z_decVec reward effort                    ...
+             decVec Z_decVec reward effort                    ...
             apVec(i)*ones(length(choicesVec),1),                    ...
             AES_total(i)*ones(length(choicesVec),1),                ...
             LARS_Total(i)*ones(length(choicesVec),1),               ...
             Composite(i)*ones(length(choicesVec),1),                ...
             BDI(i)*ones(length(choicesVec),1),                      ...
-            RT_Slow(i)*ones(length(choicesVec),1),                  ...
-            Z_AES_E(i)*ones(length(choicesVec),1),                  ...
+            RT_Slow(i)*ones(length(choicesVec),1),                  ...                                                     ...
             block];
     end
 end
 
 subject   = categorical(subData(:,1));
 choice    = subData(:,2);
-Vigour    = subData(:,3);
-DT        = subData(:,4);
-Z_DT      = subData(:,5);
-rew       = subData(:,6);
-eff       = subData(:,7);
-ap        = subData(:,8);
-AES_T     = subData(:,9);
-LARS_T= subData(:,10);
-CompAp    = subData(:,11);
-Depression= subData(:,12);
-RT_slow   = subData(:,13);
-AES_E     = subData(:,14);
-Block     = (subData(:,15));
+%Vigour    = subData(:,3);
+DT        = subData(:,3);
+Z_DT      = subData(:,4);
+rew       = subData(:,5);
+eff       = subData(:,6);
+ap        = subData(:,7);
+AES_T     = subData(:,8);
+LARS_T= subData(:,9);
+CompAp    = subData(:,10);
+Depression= subData(:,11);
+RT_slow   = subData(:,12);
+
+Block     = (subData(:,13));
 
 if 0
     % ****** IF WANT Quadratic effort *******
@@ -1428,14 +1385,15 @@ models = {
 % Then the lars Total
 'choice ~ rew*eff*LARS_T   + rew*eff*Depression +  (1|subject)'
 % Now look at models that do not include depression to compare model fits. 
-'choice ~ AES_T*rew  + AES_T*eff +  Block*rew  + Block*eff +  (1|subject)'
+'choice ~ AES_T*rew  + AES_T*eff +  (1|subject)'
 'choice ~ rew*eff*AES_T  + rew*eff*Block  +  (1|subject)'
-
 'choice ~ rew*eff*CompAp + rew*eff*Block +  (1|subject)'
 'choice ~ rew*eff*ap     + rew*eff*Block     +  (1|subject)'
 'choice ~ rew*eff*LARS_T + rew*eff*Block +  (1|subject)'
 % now just look at apathy
 'choice ~ rew*eff*AES_T  +  (1|subject)'
+'choice ~ rew*eff*AES_T  + Depression +  (1|subject)'
+
 'choice ~ rew*eff*CompAp +  (1|subject)'
 'choice ~ rew*eff*ap     + (1|subject)'
 'choice ~ rew*eff*LARS_T +  (1|subject)'
