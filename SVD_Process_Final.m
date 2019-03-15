@@ -265,6 +265,7 @@ for i=1:size(d.R,1) % for each subject
     end
     grpD.hand{subGroup} = hand;
 end
+D.maxFnorm=maxFNorm;
 
 save('AGT_SVD_Final');
 

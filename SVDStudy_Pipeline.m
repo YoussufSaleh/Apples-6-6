@@ -232,9 +232,9 @@ color1=[0.5843 0.8157 0.9882];
 color2=[0.6350,0.0780,0.1840];
 figure();hold on;
 
-b1=bar(1,mean(aaa(apVec==0,1)),'FaceColor',c('pastel blue'));hold on;  ...
+b1=bar(1,mean(aaa(apVec==0,1)),'FaceColor',c('dark pastel blue'));hold on;  ...
 errorbar(1,mean(aaa(apVec==0,1)),std(aaa(apVec==0,1))./sqrt(length(find(apVec==0))),'Color','k','LineWidth',3)
-b2=bar(2,mean(aaa(apVec==1,1)),'FaceColor',c('pale red-violet'));hold on; 
+b2=bar(2,mean(aaa(apVec==1,1)),'FaceColor',c('brick red'));hold on; 
 errorbar(2,mean(aaa(apVec==1,1)),std(aaa(apVec==1,1))./sqrt(length(find(apVec==1))),'Color','k','LineWidth',3)
 
 %plot(vecnoA,aaa(apVec==0,:),'.','MarkerSize',20,'MarkerEdgeColor',[0.5 0.5 0.5])
@@ -342,7 +342,7 @@ end
     
 
 %% **************** 2D plots ***********************
-% using just errorbar function to avoid difficulties with errorBarPlot
+%using just errorbar function to avoid difficulties with errorBarPlot
 c = @cmu.colors;
 
 close all
@@ -357,7 +357,7 @@ H2=shadedErrorBar(1:6,nanmean(dat(apVec==1,:)),   ...
     nanstd(dat(apVec==1,:)./sqrt(length(find(apVec==1)))),'lineprops',...
     {'color', c('brick red')},...
     'patchSaturation',0.3);axis square
-ylim([0 1.1]);xlim([0.5 6.5])
+ylim([0 1.1]);xlim([0 7])
 ax=gca;
 set(ax,'fontWeight','bold','fontSize',16,'XTick',[1:1:6], ...
   'XTickLabel',{'1','2','3','4','5','6'})
@@ -382,7 +382,7 @@ H2=shadedErrorBar(1:6,nanmean(dat(apVec==1,:)),   ...
     nanstd(dat(apVec==1,:)./sqrt(length(find(apVec==1)))),'lineprops',...
     {'color', c('brick red')},...
     'patchSaturation',0.3);axis square
-ylim([0 1.1]);xlim([0.5 6.5])
+ylim([0 1.1]);xlim([0 7])
 ax=gca;
 set(ax,'fontWeight','bold','fontSize',16,'XTick',[1:1:6], ...
   'XTickLabel',{'1','2','3','4','5','6'})
@@ -1155,9 +1155,9 @@ close all
 
 depVec=[];
 for i=1:subj
-    if FQs_Ex.AES_TOTAL(i) > 37 || FQs_Ex.LARS_TOTAL(i) > -22
+    if FQs_Ex.AES_TOTAL(i) >  nanmedian(FQs_Ex.AES_TOTAL) 
       
-      depVec(i)=1;
+        depVec(i)=1;
     else
         depVec(i)=0;
     end
@@ -1285,7 +1285,7 @@ for i=1:subj % each subject
     %decVec(isnan(decVec))=0;
     forceVec = D.maximumForce(i,:)';
     forceVec(forceVec<0) = nan;
-   % vigVec = D.vigour(i,:)';
+    vigVec = D.vigour(i,:)';
     block = D.block(i,:)';
     % create a matrix of decision times that will be excluded from
     % the final decision matrix that corresponds to those DT which
@@ -1305,18 +1305,18 @@ for i=1:subj % each subject
         effort(removal)    = [];
         decVec(removal)    = [];
         forceVec(removal)  = [];
-       % vigVec(removal)    = [];
+        vigVec(removal)    = [];
         Z_decVec(removal)  = [];
         block(removal)     = [];
     end
     clear removal
     if ~linear
         subData = [subData;i*ones(length(choicesVec),1) choicesVec, ...
-             decVec Z_decVec reward effort                    ...
+            vigVec decVec Z_decVec reward effort                    ...
             apVec(i)*ones(length(choicesVec),1),                    ...
             AES_total(i)*ones(length(choicesVec),1),                ...
             LARS_Total(i)*ones(length(choicesVec),1),               ...
-            Composite(i)*ones(length(choicesVec),1),                ...
+            depAP(i)*ones(length(choicesVec),1),                ...
             BDI(i)*ones(length(choicesVec),1),                      ...
             RT_Slow(i)*ones(length(choicesVec),1),                  ...                                                     ...
             block];
@@ -1325,19 +1325,18 @@ end
 
 subject   = categorical(subData(:,1));
 choice    = subData(:,2);
-%Vigour    = subData(:,3);
-DT        = subData(:,3);
-Z_DT      = subData(:,4);
-rew       = subData(:,5);
-eff       = subData(:,6);
-ap        = subData(:,7);
-AES_T     = subData(:,8);
-LARS_T= subData(:,9);
-CompAp    = subData(:,10);
-Depression= subData(:,11);
-RT_slow   = subData(:,12);
-
-Block     = (subData(:,13));
+Vigour    = subData(:,3);
+DT        = subData(:,4);
+Z_DT      = subData(:,5);
+rew       = subData(:,6);
+eff       = subData(:,7);
+ap        = subData(:,8);
+AES_T     = subData(:,9);
+LARS_T    = subData(:,10);
+CompAp    = subData(:,11);
+Depression= subData(:,12);
+RT_slow   = subData(:,13);
+Block     = (subData(:,14));
 
 if 0
     % ****** IF WANT Quadratic effort *******
@@ -1351,12 +1350,14 @@ if 1
     AES_T = nanzscore(AES_T);
     LARS_T = nanzscore(LARS_T);
     Depression = nanzscore(Depression);
+    Vigour = nanzscore(Vigour);
+    DT = nanzscore(DT);
 end
-    %force=nanzscore(force);
-    %lars = zscore(lars);
+%force=nanzscore(force);
+%lars = zscore(lars);
 
-    Design = table(choice,rew,eff,ap,AES_T,LARS_T,CompAp,Depression, ...
-      subject,Block);
+Design = table(choice,Vigour,Z_DT,DT,rew,eff,ap,AES_T,LARS_T,CompAp,Depression, ...
+    subject,Block);
 
 
 %%
@@ -1408,6 +1409,13 @@ models = {
 'choice ~ Block + (1|subject)'
 'choice ~ AES_T + (1|subject)'
 'choice ~ Depression + (1|subject)'
+
+%wild cards
+'choice ~ rew*eff*AES_T        + rew*eff*CompAp    +  (1|subject)'
+'choice ~ rew*eff*Depression   + rew*eff*CompAp    +  (1|subject)'
+
+
+
     };
 
 if linear
@@ -1447,24 +1455,15 @@ cellfun( @(x) x.Coefficients.pValue( find(cellfun(@any,regexp(x.CoefficientNames
 
 %% Analysis for Force. 
 
-% first transform
-
-force  = nanzscore(log(force));
-% check that data is normalised 
-hist(force)
-%create Table with normalised data. 
-Design1 = table(force,rew,eff,ap,subject);
 %assign linearity
 linear = 1;
 
 % create models
 models_force = {
  
-'force ~ rew*eff*ap + (1|subject)'
-'force ~ rew*eff*ap + (1+rew| subject)' 
-'force ~ rew*eff*ap + (1+rew+eff| subject)' 
-'force ~ rew*eff + rew*ap + eff*ap + (1|subject)'
-'force ~ rew*eff + (1|subject)'
+'Vigour ~ rew*eff*AES_T + (1|subject)'
+'Vigour ~ rew*eff*CompAp + (1|subject)'
+
   
   };
 
@@ -1472,14 +1471,14 @@ models_force = {
 if linear
     for i=1:length(models_force)
         sprintf('starting model %g',i)
-        glme_fit_force{i}=fitglme(Design1,models_force{i},'Distribution','normal');
+        glme_fit_force{i}=fitglme(Design,models_force{i},'Distribution','normal');
         aicf(i)=glme_fit_force{i}.ModelCriterion.AIC;
         bicf(i)=glme_fit_force{i}.ModelCriterion.BIC;
     end
 else
     for i=1:length(models_force)
         sprintf('starting model %g',i)
-        glme_fit_force{i}=fitglme(Design1,models_force{i},'Distribution','binomial','fitmethod','Laplace');
+        glme_fit_force{i}=fitglme(Design,models_force{i},'Distribution','binomial','fitmethod','Laplace');
         aicf(i)=glme_fit_force{i}.ModelCriterion.AIC;
         bicf(i)=glme_fit_force{i}.ModelCriterion.BIC;
     end
@@ -1493,6 +1492,45 @@ if 1 % save outputs
 save('glme_fitPD_Z','models_force','glme_fit_force')
 end
 
+%% Analysis for decision time. 
+
+%assign linearity
+linear = 1;
+
+% create models
+models_time = {
+ 
+'Z_DT ~ rew*eff*AES_T + (1|subject)'
+'Z_DT ~ rew*eff*CompAp + (1|subject)'
+ % now try without logging 
+'DT ~ rew*eff*AES_T + (1|subject)'
+'DT ~ rew*eff*CompAp + (1|subject)'
+  };
+
+  
+if linear
+    for i=1:length(models_time)
+        sprintf('starting model %g',i)
+        glme_fit_time{i}=fitglme(Design,models_time{i},'Distribution','normal');
+        aict(i)=glme_fit_time{i}.ModelCriterion.AIC;
+        bict(i)=glme_fit_time{i}.ModelCriterion.BIC;
+    end
+else
+    for i=1:length(models_time)
+        sprintf('starting model %g',i)
+        glme_fit_time{i}=fitglme(Design,models_time{i},'Distribution','binomial','fitmethod','Laplace');
+        aict(i)=glme_fit_time{i}.ModelCriterion.AIC;
+        bict(i)=glme_fit_time{i}.ModelCriterion.BIC;
+    end
+end
+aict=aict-min(aict);
+bict=bict-min(bict);
+if 0
+    save('glme_fit_lin_cat','models_time','glme_fit_time')
+end
+if 1 % save outputs
+save('glme_fitPD_Z','models_time','glme_fit_time')
+end
 
 
 %% Abbreviated version of Computational modelling.
@@ -1501,7 +1539,7 @@ end
 
 % First use the appropriate glmemodel
 model = { ...
-    'choice ~ 1 + rew + eff + (rew+eff|subject)'
+    'choice ~ rew*eff + (rew*eff|subject)'
     };
 
 % Then run the GLME with the two main outputs being B and BNames which
@@ -1518,12 +1556,14 @@ i = 1;
 
 %Intrinsic Motivation or int represents the intercept variation per
 %subject. index into all intercept values.  
-int = B(1:3:end);
+int = B(1:4:end);
 % reward sensitivity encoded as rewSen and indexes into all reward
 % parameters
-rewSen = B(2:3:end);
+rewSen = B(2:4:end);
 %effort sensitivity encoded as effSen 
-effSen = B(3:3:end);
+effSen = B(3:4:end);
+
+reweff = B(4:4:end);
 
 
 % Now plot these for apathetic and non apathetic patients. 
@@ -1572,6 +1612,18 @@ set(gca,'fontSize',14,'fontWeight','bold')
  xticklabels({'noAp','Ap'})
  title('effort sensitivity')
  set(gca,'fontSize',14,'fontWeight','bold')
+ 
+ subplot(2,2,4)
+ bar(1,fe(3)+(mean(reweff(apVec==0))),0.5);hold on; bar(2,fe(3)+(mean(reweff(apVec==1))),0.5);
+ errorbar(fe(3)+[(mean(reweff(apVec==0))) (mean(reweff(apVec==1)))],[std(reweff(apVec==0))/sqrt(length(reweff(apVec==0))) ...
+     std(reweff(apVec==1))/sqrt(length(reweff(apVec==1)))],'k.','LineWidth',2);
+ ylabel('Parameter estimate')
+ xlabel('apathy status (no/yes)')
+ xticks([1 2]);
+ xticklabels({'noAp','Ap'})
+ title('reweff')
+ set(gca,'fontSize',14,'fontWeight','bold')
+
 
 hold off 
 hold off 
@@ -1602,9 +1654,9 @@ pp=1./(1 + exp(-v));
 
 %%
 clf
-PLOT=2;
+PLOT=3;
 for i=1:subj
-    subplot(7,8,i)
+    subplot(10,9,i)
     if PLOT==1
         plot(squeeze(pp(i,:,:)));
         hold on
@@ -1612,7 +1664,7 @@ for i=1:subj
         plot(choices(:,:,i)','o:');
         hold off
     elseif PLOT==2
-        imagesc((pp(i,:,:)));
+        imagesc(squeeze((pp(i,:,:))));
     elseif PLOT==3
         imagesc(squeeze(choices(:,:,i))');
     end

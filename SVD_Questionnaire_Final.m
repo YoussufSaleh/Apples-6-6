@@ -71,6 +71,11 @@ FQs_Ex = addvars(FQs_Ex,Composite,'After','Other');
 
 save('Questionnaires_final','FQs_Ex','Qs_Final_raw');
 
+% what happens if I take the PCA of both apathy and depression? 
+[coeff,score,latent,tsquared,explained,mu]=pca(nanzscore ...
+    ([FQs_Ex.AES_TOTAL,FQs_Ex.BDI]),'NumComponents',1);
+depAP = score;
+FQs_Ex = addvars(FQs_Ex,depAP);
 
 
 %% Correlation plots 

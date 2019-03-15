@@ -1155,11 +1155,11 @@ close all
 
 depVec=[];
 for i=1:subj
-    if FQs_Ex.AES_TOTAL(i) < 31
+    if FQs_Ex.AES_TOTAL(i) > 37 || FQs_Ex.LARS_TOTAL(i) > -22
       
-      depVec(i)=0;
+      depVec(i)=1;
     else
-        depVec(i)=1;
+        depVec(i)=0;
     end
 end
 depVec=depVec';
@@ -1270,8 +1270,9 @@ BDI = FQs_Ex.BDI;
 %%%%%%%
 
 % this is an option to redefine cut offs 
-if 1 
-    ap = 
+if 1
+    apVec = depVec;
+end
 
 
 for i=1:subj % each subject
@@ -1284,7 +1285,7 @@ for i=1:subj % each subject
     %decVec(isnan(decVec))=0;
     forceVec = D.maximumForce(i,:)';
     forceVec(forceVec<0) = nan;
-   % vigVec = D.vigour(i,:)';
+    vigVec = D.vigour(i,:)';
     block = D.block(i,:)';
     % create a matrix of decision times that will be excluded from
     % the final decision matrix that corresponds to those DT which
@@ -1304,14 +1305,14 @@ for i=1:subj % each subject
         effort(removal)    = [];
         decVec(removal)    = [];
         forceVec(removal)  = [];
-       % vigVec(removal)    = [];
+        vigVec(removal)    = [];
         Z_decVec(removal)  = [];
         block(removal)     = [];
     end
     clear removal
     if ~linear
         subData = [subData;i*ones(length(choicesVec),1) choicesVec, ...
-             decVec Z_decVec reward effort                    ...
+            vigVec decVec Z_decVec reward effort                    ...
             apVec(i)*ones(length(choicesVec),1),                    ...
             AES_total(i)*ones(length(choicesVec),1),                ...
             LARS_Total(i)*ones(length(choicesVec),1),               ...
@@ -1324,19 +1325,18 @@ end
 
 subject   = categorical(subData(:,1));
 choice    = subData(:,2);
-%Vigour    = subData(:,3);
-DT        = subData(:,3);
-Z_DT      = subData(:,4);
-rew       = subData(:,5);
-eff       = subData(:,6);
-ap        = subData(:,7);
-AES_T     = subData(:,8);
-LARS_T= subData(:,9);
-CompAp    = subData(:,10);
-Depression= subData(:,11);
-RT_slow   = subData(:,12);
-
-Block     = (subData(:,13));
+Vigour    = subData(:,3);
+DT        = subData(:,4);
+Z_DT      = subData(:,5);
+rew       = subData(:,6);
+eff       = subData(:,7);
+ap        = subData(:,8);
+AES_T     = subData(:,9);
+LARS_T    = subData(:,10);
+CompAp    = subData(:,11);
+Depression= subData(:,12);
+RT_slow   = subData(:,13);
+Block     = (subData(:,14));
 
 if 0
     % ****** IF WANT Quadratic effort *******
@@ -1350,12 +1350,13 @@ if 1
     AES_T = nanzscore(AES_T);
     LARS_T = nanzscore(LARS_T);
     Depression = nanzscore(Depression);
+    Vigour = nanzscore(Vigour);
 end
-    %force=nanzscore(force);
-    %lars = zscore(lars);
+%force=nanzscore(force);
+%lars = zscore(lars);
 
-    Design = table(choice,rew,eff,ap,AES_T,LARS_T,CompAp,Depression, ...
-      subject,Block);
+Design = table(choice,Vigour,Z_DT,rew,eff,ap,AES_T,LARS_T,CompAp,Depression, ...
+    subject,Block);
 
 
 %%
@@ -1446,24 +1447,14 @@ cellfun( @(x) x.Coefficients.pValue( find(cellfun(@any,regexp(x.CoefficientNames
 
 %% Analysis for Force. 
 
-% first transform
-
-force  = nanzscore(log(force));
-% check that data is normalised 
-hist(force)
-%create Table with normalised data. 
-Design1 = table(force,rew,eff,ap,subject);
 %assign linearity
 linear = 1;
 
 % create models
 models_force = {
  
-'force ~ rew*eff*ap + (1|subject)'
-'force ~ rew*eff*ap + (1+rew| subject)' 
-'force ~ rew*eff*ap + (1+rew+eff| subject)' 
-'force ~ rew*eff + rew*ap + eff*ap + (1|subject)'
-'force ~ rew*eff + (1|subject)'
+'Vigour ~ rew*eff*AES_T + (1|subject)'
+
   
   };
 
@@ -1471,14 +1462,14 @@ models_force = {
 if linear
     for i=1:length(models_force)
         sprintf('starting model %g',i)
-        glme_fit_force{i}=fitglme(Design1,models_force{i},'Distribution','normal');
+        glme_fit_force{i}=fitglme(Design,models_force{i},'Distribution','normal');
         aicf(i)=glme_fit_force{i}.ModelCriterion.AIC;
         bicf(i)=glme_fit_force{i}.ModelCriterion.BIC;
     end
 else
     for i=1:length(models_force)
         sprintf('starting model %g',i)
-        glme_fit_force{i}=fitglme(Design1,models_force{i},'Distribution','binomial','fitmethod','Laplace');
+        glme_fit_force{i}=fitglme(Design,models_force{i},'Distribution','binomial','fitmethod','Laplace');
         aicf(i)=glme_fit_force{i}.ModelCriterion.AIC;
         bicf(i)=glme_fit_force{i}.ModelCriterion.BIC;
     end
@@ -1492,6 +1483,43 @@ if 1 % save outputs
 save('glme_fitPD_Z','models_force','glme_fit_force')
 end
 
+%% Analysis for decision time. 
+
+%assign linearity
+linear = 1;
+
+% create models
+models_force = {
+ 
+'Z_DT ~ rew*eff*AES_T + (1|subject)'
+
+  
+  };
+
+  
+if linear
+    for i=1:length(models_force)
+        sprintf('starting model %g',i)
+        glme_fit_force{i}=fitglme(Design,models_force{i},'Distribution','normal');
+        aict(i)=glme_fit_force{i}.ModelCriterion.AIC;
+        bicf(i)=glme_fit_force{i}.ModelCriterion.BIC;
+    end
+else
+    for i=1:length(models_force)
+        sprintf('starting model %g',i)
+        glme_fit_force{i}=fitglme(Design,models_force{i},'Distribution','binomial','fitmethod','Laplace');
+        aicf(i)=glme_fit_force{i}.ModelCriterion.AIC;
+        bicf(i)=glme_fit_force{i}.ModelCriterion.BIC;
+    end
+end
+aicf=aicf-min(aicf);
+bicf=bicf-min(bicf);
+if 0
+    save('glme_fit_lin_cat','models_force','glme_fit_force')
+end
+if 1 % save outputs
+save('glme_fitPD_Z','models_force','glme_fit_force')
+end
 
 
 %% Abbreviated version of Computational modelling.
