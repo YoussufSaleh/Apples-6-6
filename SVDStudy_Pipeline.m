@@ -115,7 +115,7 @@ apVec=[]';
 for i = 1:subj
     %if FQs_Ex.LARS_TOTAL(i)>-22 || FQs_Ex.AES_TOTAL(i) > 37
     %if FQs_Ex.AES_TOTAL(i) > 37
-    if FQs_Ex.Composite(i) > nanmedian(FQs_Ex.Composite) 
+    if FQs_Ex.AES_TOTAL(i) > 37
             %nanstd(FQs_Ex.Composite)
         apVec(i)=1;
     else apVec(i)=0;
@@ -150,7 +150,7 @@ if 0
 close all;
 meanMVC = [D.MVC1 D.MVC2];
 meanMVC = mean(meanMVC,2);
-scatterRegress(larsT,meanMVC);
+scatterRegress(FQs_Ex.AES_TOTAL,meanMVC);
 xlabel('LARS - SELF')
 ylabel('meanMVC (Newtons)')
 title('No correlation between MVC and apathy score')
@@ -323,7 +323,7 @@ subplot(1,2,2)
 for i=1:6
     errorBarPlot(squeeze(choices(i,:,apVec==1))',':','LineWidth',5);hold on
 end
-makeSubplotScalesEqual(1,2)
+makeSubplotScalesEqual(1,2);
 
 
 %%
@@ -820,29 +820,57 @@ hist(residM)
 % And note, for most part (from C147 handles) conversion factor is
 % Right:1kg = 0.03V, Left: 1kg = 0.04V.
 %
-close all
+c = @cmu.colors;
 
-% check magnitude ofpeak squeeze at each force level
+% check magnitude ofpeak squeeze at each force level for the whole group
+allforce = squeeze(nanmean(nanmean(grpD.maxforce{1}(:,:,:,:),4),2))';
+% check magnitude ofpeak squeeze at each force level for each subgroup
 NAp_Sq = squeeze(nanmean(nanmean(grpD.maxforce{1}(:,:,apVec==0,:),4),2))';
 Ap_Sq=   squeeze(nanmean(nanmean(grpD.maxforce{1}(:,:,apVec==1,:),4),2))';
 %HC_Sq = squeeze(nanmean(nanmean(grpD_HC.maxforce{1},4),2))';
 if 1 % limit max force exerted to 1
     NAp_Sq(NAp_Sq>1)=1;
     Ap_Sq(Ap_Sq>1)=1;
+    allforce(allforce>1)=1;
  %   HC_Sq(HC_Sq>1)=1;
 end
+
+% whole group first 
 figure()
 %errorbar(nanmean(HC_Sq),nanstd(HC_Sq)./sqrt(19),':','Color',[0.7 0.7 0.7],'LineWidth',5);hold on
-errorbar(nanmean(NAp_Sq),nanstd(NAp_Sq)./sqrt(19),'b:','LineWidth',5)
-hold on
-errorbar(nanmean(Ap_Sq),nanstd(Ap_Sq)./sqrt(11),'r:','LineWidth',5)
-hold off
+H1=shadedErrorBar(1:6,nanmean(allforce),nanstd(allforce)./sqrt(83),'lineprops',...
+    {'-.','color', c('dark pastel blue')},...
+    'patchSaturation',0.3);
+
 ax=gca;
 ylim([0.2 1])
 xlim([0 7])
 set(ax,'fontWeight','bold','fontSize',20,'XTick',[1:6],'XTickLabel',{0.1 0.24 0.38 0.52 0.66 0.80})
 axis square
-legend('  SVD - No Apathy','  SVD - Apathy')
+[lgd, icons, plots, txt] = legend([H1.mainLine],{'Whole Group'});
+xlabel('Required Effort (proportion MVC)');ylabel('Peak squeeze (proportion MVC)');
+
+
+
+
+
+
+
+figure()
+%errorbar(nanmean(HC_Sq),nanstd(HC_Sq)./sqrt(19),':','Color',[0.7 0.7 0.7],'LineWidth',5);hold on
+H1=shadedErrorBar(1:6,nanmean(NAp_Sq),nanstd(NAp_Sq)./sqrt(length(find(apVec==0))),'lineprops',...
+    {'-.','color', c('dark pastel blue')},...
+    'patchSaturation',0.3);
+hold on
+H2=shadedErrorBar(1:6,nanmean(Ap_Sq),nanstd(NAp_Sq)./sqrt(length(find(apVec==1))),'lineprops',...
+    {'-.','color', c('brick red')},...
+    'patchSaturation',0.3);hold off
+ax=gca;
+ylim([0.2 1])
+xlim([0 7])
+set(ax,'fontWeight','bold','fontSize',20,'XTick',[1:6],'XTickLabel',{0.1 0.24 0.38 0.52 0.66 0.80})
+axis square
+[lgd, icons, plots, txt] = legend([H1.mainLine H2.mainLine],{'No Apathy','Apathy'});
 xlabel('Required Effort (proportion MVC)');ylabel('Peak squeeze (proportion MVC)');
 
 %% Failed squeeze trials
@@ -1155,7 +1183,7 @@ close all
 
 depVec=[];
 for i=1:subj
-    if FQs_Ex.AES_TOTAL(i) >  nanmedian(FQs_Ex.AES_TOTAL) 
+    if FQs_Ex.AES_TOTAL(i) >  37 
       
         depVec(i)=1;
     else
@@ -1270,7 +1298,7 @@ BDI = FQs_Ex.BDI;
 %%%%%%%
 
 % this is an option to redefine cut offs 
-if 1
+if 0
     apVec = depVec;
 end
 
@@ -1291,10 +1319,11 @@ for i=1:subj % each subject
     % the final decision matrix that corresponds to those DT which
     % are more than 3 STD from the mean for that particular patient
     dtind = dt(i,:)';
-    RT_Slow = abs(dtind - nanmean(dtind)) <= 3.*nanstd(dtind);
+    RT_Slow = abs(dtind - nanmean(dtind)) >= 3.*nanstd(dtind);
     a=1;
     for j = 1:length(decVec) %for each of the 180 trials
-        if decVec(j) < 0.4 || decVec(j) > 6.0
+        if decVec(j) < 0.4 || decVec(j) >= mean(decVec)+ ...
+                3*nanstd(decVec);
             removal(a) = j; %create vector of trials to remove
             a=a+1;
         end
@@ -1316,7 +1345,7 @@ for i=1:subj % each subject
             apVec(i)*ones(length(choicesVec),1),                    ...
             AES_total(i)*ones(length(choicesVec),1),                ...
             LARS_Total(i)*ones(length(choicesVec),1),               ...
-            depAP(i)*ones(length(choicesVec),1),                ...
+            Composite(i)*ones(length(choicesVec),1),                ...
             BDI(i)*ones(length(choicesVec),1),                      ...
             RT_Slow(i)*ones(length(choicesVec),1),                  ...                                                     ...
             block];
@@ -1409,11 +1438,6 @@ models = {
 'choice ~ Block + (1|subject)'
 'choice ~ AES_T + (1|subject)'
 'choice ~ Depression + (1|subject)'
-
-%wild cards
-'choice ~ rew*eff*AES_T        + rew*eff*CompAp    +  (1|subject)'
-'choice ~ rew*eff*Depression   + rew*eff*CompAp    +  (1|subject)'
-
 
 
     };
