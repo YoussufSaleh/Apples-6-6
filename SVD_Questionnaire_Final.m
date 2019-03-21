@@ -13,9 +13,9 @@
 [~, ~, raw] = xlsread('/Users/youssufsaleh/Downloads/SVD-5.xlsx','Demographics_Final');
 raw = raw(2:end,:);
 raw(cellfun(@(x) ~isempty(x) && isnumeric(x) && isnan(x),raw)) = {''};
-stringVectors = string(raw(:,[1,16,17,18,19]));
+stringVectors = string(raw(:,1));
 stringVectors(ismissing(stringVectors)) = '';
-raw = raw(:,[2,3,4,5,6,7,8,9,10,11,12,13,14,15 20]);
+raw = raw(:,[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]);
 
 %% Replace non-numeric cells with NaN
 R = cellfun(@(x) ~isnumeric(x) && ~islogical(x),raw); % Find non-numeric cells
@@ -43,10 +43,12 @@ Qs_Final_raw.Other = data(:,11);
 Qs_Final_raw.BDI = data(:,12);
 Qs_Final_raw.ACE_Total = data(:,13);
 Qs_Final_raw.Excluded = data(:,14);
-Qs_Final_raw.dysphoria = data(:,15);
-Qs_Final_raw.FullStructural = stringVectors(:,3);
-Qs_Final_raw.FullDiffusion30 = stringVectors(:,4);
-Qs_Final_raw.FullDiffusion60 = stringVectors(:,5);
+Qs_Final_raw.FullStructural = data(:,15);
+Qs_Final_raw.FullDiffusion30 = data(:,16);
+Qs_Final_raw.FullDiffusion60 = data(:,17);
+Qs_Final_raw.dysphoria = data(:,18);
+
+
 
 %% Clear temporary variables
 clearvars data raw stringVectors R;
@@ -77,6 +79,12 @@ save('Questionnaires_final','FQs_Ex','Qs_Final_raw');
 depAP = score;
 FQs_Ex = addvars(FQs_Ex,depAP);
 
+% now lets look at the residuals that come out of this. 
+[coeff,score,latent,tsquared,explained,mu]=pca(nanzscore ...
+    (XAP),'NumComponents',1);
+Composite = score;
+residuals = pcares(X,ndim)
+[residuals,reconstructed] = pcares(X,ndim)
 
 %% Correlation plots 
 
@@ -118,7 +126,7 @@ apVec=[]';
 for i = 1:subj
     %if FQs_Ex.LARS_TOTAL(i)>-22 || FQs_Ex.AES_TOTAL(i) > 37
     %if FQs_Ex.AES_TOTAL(i) > 37
-    if FQs_Ex.Composite(i) > nanmedian(FQs_Ex.Composite) 
+    if FQs_Ex.AES_TOTAL(i) > nanmedian(FQs_Ex.AES_TOTAL) 
         apVec(i)=1;
     else apVec(i)=0;
     end
@@ -164,9 +172,16 @@ writetable(Chi,...
 
 
 
+%% MRI regressors 
+MRI = table(FQs_Ex.Age,FQs_Ex.GenderM1,FQs_Ex.AES_TOTAL,...
+    FQs_Ex.AES_Behavioural,FQs_Ex.BDI,accept,Vigour_mean,DT_log)
+MRI.Properties.VariableNames = {'Age','Gender','AES_Total','AES_Behaviour',...
+    'BDI','Accept','Vigour','DT_log'};
 
+% now mean and centre all of them. 
+MRIz = varfun(@nanzscore,MRI);
 
-
+%% Can we put together a version of this which allows me to do a factor analysis between Apathy and depression? 
 
 
 

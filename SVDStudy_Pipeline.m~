@@ -115,7 +115,7 @@ apVec=[]';
 for i = 1:subj
     %if FQs_Ex.LARS_TOTAL(i)>-22 || FQs_Ex.AES_TOTAL(i) > 37
     %if FQs_Ex.AES_TOTAL(i) > 37
-    if FQs_Ex.AES_TOTAL(i) > nanmedian(FQs_Ex.AES_TOTAL) 
+    if FQs_Ex.AES_TOTAL(i) > 31
             %nanstd(FQs_Ex.Composite)
         apVec(i)=1;
     else apVec(i)=0;
@@ -132,6 +132,7 @@ end
 % reshape choice data & prepare decision time matrix
 choices = nanmean(grpD.choicemap{1},4);
 forces = nanmean(grpD.maxforce{1},4);%all subjects average choices with accidental squeezes removed (nan)
+times = nanmean(grpD.log_DT,4);
 dt = D.endChoice - D.startChoice; % decision time info
 dt = dt(:,37:end); %exclude practice session
 
@@ -336,10 +337,23 @@ tempflog = [];
 for i=1:subj % each subject
     temp(i,:)=reshape(choices(:,:,i)',36,1);
     tempArc(i,:)=asin(temp(i,:));
-    tempf(i,:)=reshape(forces(:,:,i)',36,1);
-    tempflog(i,:)=log(temp(i,:));
+    tempv(i,:)=reshape(vig(:,:,i)',36,1);
+    % same for decision time, which I have log transformed. 
+    tempt(i,:)=reshape(times(:,:,i)',36,1);
+
 end
-    
+    vivec = nanzscore(tempv);
+    tempArcz = nanzscore(tempArc);
+    temptz   = nanzscore(tempt);
+% check if normalised 
+close all
+figure()
+hist(vivec)
+figure()
+hist(tempArcz)
+figure()
+hist(tempt)
+
 
 %% **************** 2D plots ***********************
 %using just errorbar function to avoid difficulties with errorBarPlot
@@ -823,7 +837,7 @@ hist(residM)
 c = @cmu.colors;
 
 % check magnitude ofpeak squeeze at each force level for the whole group
-allforce = squeeze(nanmean(nanmean(grpD.maxforce{1}(:,:,apVec==0,:),4),2))';
+allforce = squeeze(nanmean(nanmean(grpD.maxforce{1}(:,:,:,:),4),2))';
 % check magnitude ofpeak squeeze at each force level for each subgroup
 NAp_Sq = squeeze(nanmean(nanmean(grpD.maxforce{1}(:,:,apVec==0,:),4),2))';
 Ap_Sq=   squeeze(nanmean(nanmean(grpD.maxforce{1}(:,:,apVec==1,:),4),2))';
@@ -831,8 +845,31 @@ Ap_Sq=   squeeze(nanmean(nanmean(grpD.maxforce{1}(:,:,apVec==1,:),4),2))';
 if 1 % limit max force exerted to 1
     NAp_Sq(NAp_Sq>1)=1;
     Ap_Sq(Ap_Sq>1)=1;
+    allforce(allforce>1)=1;
  %   HC_Sq(HC_Sq>1)=1;
 end
+
+% whole group first 
+figure()
+%errorbar(nanmean(HC_Sq),nanstd(HC_Sq)./sqrt(19),':','Color',[0.7 0.7 0.7],'LineWidth',5);hold on
+H1=shadedErrorBar(1:6,nanmean(allforce),nanstd(allforce)./sqrt(83),'lineprops',...
+    {'-.','color', c('dark pastel blue')},...
+    'patchSaturation',0.3);
+
+ax=gca;
+ylim([0.2 1])
+xlim([0 7])
+set(ax,'fontWeight','bold','fontSize',20,'XTick',[1:6],'XTickLabel',{0.1 0.24 0.38 0.52 0.66 0.80})
+axis square
+[lgd, icons, plots, txt] = legend([H1.mainLine],{'Whole Group'});
+xlabel('Required Effort (proportion MVC)');ylabel('Peak squeeze (proportion MVC)');
+
+
+
+
+
+
+
 figure()
 %errorbar(nanmean(HC_Sq),nanstd(HC_Sq)./sqrt(19),':','Color',[0.7 0.7 0.7],'LineWidth',5);hold on
 H1=shadedErrorBar(1:6,nanmean(NAp_Sq),nanstd(NAp_Sq)./sqrt(length(find(apVec==0))),'lineprops',...
@@ -1154,13 +1191,16 @@ ylim([0.1 1.1]);xlim([0 7]);
 title('Ap vs blocks')
 
 %% ******************** Depression Effects   *************************
-% Dysphoria subscale does not really split apathetic group up (using median
-% split) - can argue anyway to use GDS given prevalence in SVD cohorts... 
+% create this vector to look at the effect of removing the Depression
+% outlier you can place this into the dat equation instead of choices. 
+choices_outlier = choices(:,:,[1:46 48:83]);
+BDI_outlier = BDI([1:46 48:83]);
+AES_outlier = AES_total([1:46 48:83]);
 close all
 
 depVec=[];
 for i=1:subj
-    if FQs_Ex.AES_TOTAL(i) >  nanmedian(FQs_Ex.AES_TOTAL) 
+    if FQs_Ex.AES_TOTAL(i) > 34
       
         depVec(i)=1;
     else
@@ -1168,6 +1208,7 @@ for i=1:subj
     end
 end
 depVec=depVec';
+
 
 
 for i=1:2
@@ -1275,7 +1316,7 @@ BDI = FQs_Ex.BDI;
 %%%%%%%
 
 % this is an option to redefine cut offs 
-if 1
+if 0
     apVec = depVec;
 end
 
@@ -1296,10 +1337,11 @@ for i=1:subj % each subject
     % the final decision matrix that corresponds to those DT which
     % are more than 3 STD from the mean for that particular patient
     dtind = dt(i,:)';
-    RT_Slow = abs(dtind - nanmean(dtind)) <= 3.*nanstd(dtind);
+    RT_Slow = abs(dtind - nanmean(dtind)) >= 3.*nanstd(dtind);
     a=1;
     for j = 1:length(decVec) %for each of the 180 trials
-        if decVec(j) < 0.4 || decVec(j) > 6.0
+        if decVec(j) < 0.4 || decVec(j) >= mean(decVec)+ ...
+                3*nanstd(decVec);
             removal(a) = j; %create vector of trials to remove
             a=a+1;
         end
@@ -1321,7 +1363,7 @@ for i=1:subj % each subject
             apVec(i)*ones(length(choicesVec),1),                    ...
             AES_total(i)*ones(length(choicesVec),1),                ...
             LARS_Total(i)*ones(length(choicesVec),1),               ...
-            depAP(i)*ones(length(choicesVec),1),                ...
+            Composite(i)*ones(length(choicesVec),1),                ...
             BDI(i)*ones(length(choicesVec),1),                      ...
             RT_Slow(i)*ones(length(choicesVec),1),                  ...                                                     ...
             block];
@@ -1415,13 +1457,37 @@ models = {
 'choice ~ AES_T + (1|subject)'
 'choice ~ Depression + (1|subject)'
 
-%wild cards
-'choice ~ rew*eff*AES_T        + rew*eff*CompAp    +  (1|subject)'
-'choice ~ rew*eff*Depression   + rew*eff*CompAp    +  (1|subject)'
-
-
 
     };
+
+if linear
+    for i=1:length(models)
+        sprintf('starting model %g',i)
+        glme_fit{i}=fitglme(Design,models{i},'Distribution','normal');
+        aic(i)=glme_fit{i}.ModelCriterion.AIC;
+        bic(i)=glme_fit{i}.ModelCriterion.BIC;
+    end
+else
+    for i=1:length(models)
+        sprintf('starting model %g',i)
+        glme_fit{i}=fitglme(Design,models{i},'Distribution','binomial','fitmethod','Laplace');
+        aic(i)=glme_fit{i}.ModelCriterion.AIC;
+        bic(i)=glme_fit{i}.ModelCriterion.BIC;
+                
+
+    end
+end
+aic=aic-min(aic);
+bic=bic-min(bic);
+
+if 1
+    save('glme_fit_lin_cat','models','glme_fit')
+end
+if 0 % save outputs
+save('glme_fitPD_Z','models','glme_fit')
+end
+
+%% I now want to run this model with a different fit method. here I will use Approximate Laplace. 
 
 if linear
     for i=1:length(models)
@@ -1433,22 +1499,25 @@ if linear
 else
     for i=1:length(models)
         sprintf('starting model %g',i)
-        glme_fit{i}=fitglme(Design,models{i},'Distribution','binomial','fitmethod','Laplace','PLIterations',1000000);
-        aic(i)=glme_fit{i}.ModelCriterion.AIC;
-        bic(i)=glme_fit{i}.ModelCriterion.BIC;
+        glme_fit_a{i}=fitglme(Design,models{i},'Distribution','binomial','fitmethod','ApproximateLaplace');
+        aica(i)=glme_fit_a{i}.ModelCriterion.AIC;
+        bica(i)=glme_fit_a{i}.ModelCriterion.BIC;
                 
 
     end
 end
-aic=aic-min(aic);
-bic=bic-min(bic);
+aicamin=aica-min(aica);
+bicamin=bica-min(bica);
 
-if 0
-    save('glme_fit_lin_cat','models','glme_fit')
+if 1
+    save('glme_fit_lin_cat_approximate','models','glme_fit_a')
 end
 if 0 % save outputs
 save('glme_fitPD_Z','models','glme_fit')
 end
+
+
+
 
 
 %% view p values from all models, for a given effect
@@ -1459,6 +1528,7 @@ cellfun( @(x) x.Coefficients.pValue( find(cellfun(@any,regexp(x.CoefficientNames
 
 
 %% Analysis for Force. 
+clear  glme_fit_force bicf aicf
 
 %assign linearity
 linear = 1;
@@ -1467,7 +1537,8 @@ linear = 1;
 models_force = {
  
 'Vigour ~ rew*eff*AES_T + (1|subject)'
-'Vigour ~ rew*eff*CompAp + (1|subject)'
+'Vigour ~ rew*eff*AES_T + rew*eff*Depression + (1|subject)'
+
 
   
   };
@@ -1498,6 +1569,7 @@ save('glme_fitPD_Z','models_force','glme_fit_force')
 end
 
 %% Analysis for decision time. 
+clear aic glme_fit_time bict aict
 
 %assign linearity
 linear = 1;
@@ -1506,10 +1578,8 @@ linear = 1;
 models_time = {
  
 'Z_DT ~ rew*eff*AES_T + (1|subject)'
-'Z_DT ~ rew*eff*CompAp + (1|subject)'
+'Z_DT ~ rew*eff*AES_T + rew*eff*Depression'
  % now try without logging 
-'DT ~ rew*eff*AES_T + (1|subject)'
-'DT ~ rew*eff*CompAp + (1|subject)'
   };
 
   
@@ -1648,7 +1718,8 @@ for sub = 1:subj
            
             v(sub,r,e) = fe(1) + int(sub) ...
                 + (fe(2) + rewSen(sub))*zrew(r)' ...
-                + (fe(3) + effSen(sub))*(zeff(e));
+                + (fe(3) + effSen(sub))*(zeff(e))
+            + ;
             
         end
     end

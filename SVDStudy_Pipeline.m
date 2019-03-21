@@ -115,7 +115,7 @@ apVec=[]';
 for i = 1:subj
     %if FQs_Ex.LARS_TOTAL(i)>-22 || FQs_Ex.AES_TOTAL(i) > 37
     %if FQs_Ex.AES_TOTAL(i) > 37
-    if FQs_Ex.AES_TOTAL(i) > 37
+    if FQs_Ex.AES_TOTAL(i) > 29
             %nanstd(FQs_Ex.Composite)
         apVec(i)=1;
     else apVec(i)=0;
@@ -132,6 +132,7 @@ end
 % reshape choice data & prepare decision time matrix
 choices = nanmean(grpD.choicemap{1},4);
 forces = nanmean(grpD.maxforce{1},4);%all subjects average choices with accidental squeezes removed (nan)
+times = nanmean(grpD.log_DT,4);
 dt = D.endChoice - D.startChoice; % decision time info
 dt = dt(:,37:end); %exclude practice session
 
@@ -336,10 +337,23 @@ tempflog = [];
 for i=1:subj % each subject
     temp(i,:)=reshape(choices(:,:,i)',36,1);
     tempArc(i,:)=asin(temp(i,:));
-    tempf(i,:)=reshape(forces(:,:,i)',36,1);
-    tempflog(i,:)=log(temp(i,:));
+    tempv(i,:)=reshape(vig(:,:,i)',36,1);
+    % same for decision time, which I have log transformed. 
+    tempt(i,:)=reshape(times(:,:,i)',36,1);
+
 end
-    
+    vivec = nanzscore(tempv);
+    tempArcz = nanzscore(tempArc);
+    temptz   = nanzscore(tempt);
+% check if normalised 
+close all
+figure()
+hist(vivec)
+figure()
+hist(tempArcz)
+figure()
+hist(tempt)
+
 
 %% **************** 2D plots ***********************
 %using just errorbar function to avoid difficulties with errorBarPlot
@@ -350,12 +364,12 @@ subplot(1,3,1);
 dat = squeeze(mean(choices,2))';
 H1=shadedErrorBar(1:6,nanmean(dat(apVec==0,:)),   ...
     nanstd(dat(apVec==0,:)./sqrt(length(find(apVec==0)))),'lineprops',...
-    {'color', c('air force blue')},...
+    {'-.','color', c('air force blue')},...
     'patchSaturation',0.3);
 hold on 
 H2=shadedErrorBar(1:6,nanmean(dat(apVec==1,:)),   ...
     nanstd(dat(apVec==1,:)./sqrt(length(find(apVec==1)))),'lineprops',...
-    {'color', c('brick red')},...
+    {'-.','color', c('brick red')},...
     'patchSaturation',0.3);axis square
 ylim([0 1.1]);xlim([0 7])
 ax=gca;
@@ -375,12 +389,12 @@ dat = squeeze(mean(choices,1))';
 subplot(1,3,2)
 H1=shadedErrorBar(1:6,nanmean(dat(apVec==0,:)),   ...
     nanstd(dat(apVec==0,:)./sqrt(length(find(apVec==0)))),'lineprops',...
-    {'color', c('royal purple')},...
+    {'-.','color', c('royal purple')},...
     'patchSaturation',0.3);
 hold on 
 H2=shadedErrorBar(1:6,nanmean(dat(apVec==1,:)),   ...
     nanstd(dat(apVec==1,:)./sqrt(length(find(apVec==1)))),'lineprops',...
-    {'color', c('brick red')},...
+    {'-.','color', c('brick red')},...
     'patchSaturation',0.3);axis square
 ylim([0 1.1]);xlim([0 7])
 ax=gca;
@@ -402,7 +416,7 @@ subplot(1,3,3)
 choiceDif=(mean(choices(:,:,apVec==0),3)-mean(choices(:,:,apVec==1),3));
 h=surf(choiceDif);shading('interp');hold on;colormap('jet');%colorbar('Ticks',0:.05:.2)
 ax=gca;
-set(ax,'fontWeight','bold','fontSize',16,'XTick',[1:1:5],'YTickLabel',{'1','2','3','4','5'},'YTick',[1:1:5],'XTickLabel',{'1','2','3','4','5'},'ZTickLabel',{'','0','0.1','0.2','0.3','0.4','0.5'})
+set(ax,'fontWeight','bold','fontSize',16,'XTick',[1:1:6],'YTickLabel',{'1','2','3','4','5','6'},'YTick',[1:1:6],'XTickLabel',{'1','2','3','4','5','6'},'ZTick',[0:0.05:0.20],'ZTickLabel',{'0','0.05','0.1','0.15','0.2'})
 title('3D plot NoAp vs. AP')
 ylabel('Effort (%MVC)')
 xlabel('Reward')
@@ -1177,13 +1191,16 @@ ylim([0.1 1.1]);xlim([0 7]);
 title('Ap vs blocks')
 
 %% ******************** Depression Effects   *************************
-% Dysphoria subscale does not really split apathetic group up (using median
-% split) - can argue anyway to use GDS given prevalence in SVD cohorts... 
+% create this vector to look at the effect of removing the Depression
+% outlier you can place this into the dat equation instead of choices. 
+choices_outlier = choices(:,:,[1:46 48:83]);
+BDI_outlier = BDI([1:46 48:83]);
+AES_outlier = AES_total([1:46 48:83]);
 close all
 
 depVec=[];
 for i=1:subj
-    if FQs_Ex.AES_TOTAL(i) >  37 
+    if FQs_Ex.AES_TOTAL(i) > 34
       
         depVec(i)=1;
     else
@@ -1191,6 +1208,7 @@ for i=1:subj
     end
 end
 depVec=depVec';
+
 
 
 for i=1:2
@@ -1447,12 +1465,12 @@ if linear
         sprintf('starting model %g',i)
         glme_fit{i}=fitglme(Design,models{i},'Distribution','normal');
         aic(i)=glme_fit{i}.ModelCriterion.AIC;
-        bicf(i)=glme_fit{i}.ModelCriterion.BIC;
+        bic(i)=glme_fit{i}.ModelCriterion.BIC;
     end
 else
     for i=1:length(models)
         sprintf('starting model %g',i)
-        glme_fit{i}=fitglme(Design,models{i},'Distribution','binomial','fitmethod','Laplace','PLIterations',1000000);
+        glme_fit{i}=fitglme(Design,models{i},'Distribution','binomial','fitmethod','Laplace');
         aic(i)=glme_fit{i}.ModelCriterion.AIC;
         bic(i)=glme_fit{i}.ModelCriterion.BIC;
                 
@@ -1462,12 +1480,44 @@ end
 aic=aic-min(aic);
 bic=bic-min(bic);
 
-if 0
+if 1
     save('glme_fit_lin_cat','models','glme_fit')
 end
 if 0 % save outputs
 save('glme_fitPD_Z','models','glme_fit')
 end
+
+%% I now want to run this model with a different fit method. here I will use Approximate Laplace. 
+
+if linear
+    for i=1:length(models)
+        sprintf('starting model %g',i)
+        glme_fit{i}=fitglme(Design,models{i},'Distribution','normal');
+        aic(i)=glme_fit{i}.ModelCriterion.AIC;
+        bicf(i)=glme_fit{i}.ModelCriterion.BIC;
+    end
+else
+    for i=1:length(models)
+        sprintf('starting model %g',i)
+        glme_fit_a{i}=fitglme(Design,models{i},'Distribution','binomial','fitmethod','ApproximateLaplace');
+        aica(i)=glme_fit_a{i}.ModelCriterion.AIC;
+        bica(i)=glme_fit_a{i}.ModelCriterion.BIC;
+                
+
+    end
+end
+aicamin=aica-min(aica);
+bicamin=bica-min(bica);
+
+if 1
+    save('glme_fit_lin_cat_approximate','models','glme_fit_a')
+end
+if 0 % save outputs
+save('glme_fitPD_Z','models','glme_fit')
+end
+
+
+
 
 
 %% view p values from all models, for a given effect
@@ -1478,6 +1528,7 @@ cellfun( @(x) x.Coefficients.pValue( find(cellfun(@any,regexp(x.CoefficientNames
 
 
 %% Analysis for Force. 
+clear  glme_fit_force bicf aicf
 
 %assign linearity
 linear = 1;
@@ -1486,7 +1537,8 @@ linear = 1;
 models_force = {
  
 'Vigour ~ rew*eff*AES_T + (1|subject)'
-'Vigour ~ rew*eff*CompAp + (1|subject)'
+'Vigour ~ rew*eff*AES_T + rew*eff*Depression + (1|subject)'
+
 
   
   };
@@ -1517,6 +1569,7 @@ save('glme_fitPD_Z','models_force','glme_fit_force')
 end
 
 %% Analysis for decision time. 
+clear aic glme_fit_time bict aict
 
 %assign linearity
 linear = 1;
@@ -1525,10 +1578,8 @@ linear = 1;
 models_time = {
  
 'Z_DT ~ rew*eff*AES_T + (1|subject)'
-'Z_DT ~ rew*eff*CompAp + (1|subject)'
+'Z_DT ~ rew*eff*AES_T + rew*eff*Depression'
  % now try without logging 
-'DT ~ rew*eff*AES_T + (1|subject)'
-'DT ~ rew*eff*CompAp + (1|subject)'
   };
 
   
@@ -1563,7 +1614,7 @@ end
 
 % First use the appropriate glmemodel
 model = { ...
-    'choice ~ rew*eff + (rew*eff|subject)'
+    'choice ~ rew+eff + (rew+eff|subject)'
     };
 
 % Then run the GLME with the two main outputs being B and BNames which
@@ -1580,14 +1631,13 @@ i = 1;
 
 %Intrinsic Motivation or int represents the intercept variation per
 %subject. index into all intercept values.  
-int = B(1:4:end);
+int = B(1:3:end);
 % reward sensitivity encoded as rewSen and indexes into all reward
 % parameters
-rewSen = B(2:4:end);
+rewSen = B(2:3:end);
 %effort sensitivity encoded as effSen 
-effSen = B(3:4:end);
+effSen = B(3:3:end);
 
-reweff = B(4:4:end);
 
 
 % Now plot these for apathetic and non apathetic patients. 
@@ -1637,16 +1687,16 @@ set(gca,'fontSize',14,'fontWeight','bold')
  title('effort sensitivity')
  set(gca,'fontSize',14,'fontWeight','bold')
  
- subplot(2,2,4)
- bar(1,fe(3)+(mean(reweff(apVec==0))),0.5);hold on; bar(2,fe(3)+(mean(reweff(apVec==1))),0.5);
- errorbar(fe(3)+[(mean(reweff(apVec==0))) (mean(reweff(apVec==1)))],[std(reweff(apVec==0))/sqrt(length(reweff(apVec==0))) ...
-     std(reweff(apVec==1))/sqrt(length(reweff(apVec==1)))],'k.','LineWidth',2);
- ylabel('Parameter estimate')
- xlabel('apathy status (no/yes)')
- xticks([1 2]);
- xticklabels({'noAp','Ap'})
- title('reweff')
- set(gca,'fontSize',14,'fontWeight','bold')
+%  subplot(2,2,4)
+%  bar(1,fe(3)+(mean(reweff(apVec==0))),0.5);hold on; bar(2,fe(3)+(mean(reweff(apVec==1))),0.5);
+%  errorbar(fe(3)+[(mean(reweff(apVec==0))) (mean(reweff(apVec==1)))],[std(reweff(apVec==0))/sqrt(length(reweff(apVec==0))) ...
+%      std(reweff(apVec==1))/sqrt(length(reweff(apVec==1)))],'k.','LineWidth',2);
+%  ylabel('Parameter estimate')
+%  xlabel('apathy status (no/yes)')
+%  xticks([1 2]);
+%  xticklabels({'noAp','Ap'})
+%  title('reweff')
+%  set(gca,'fontSize',14,'fontWeight','bold')
 
 
 hold off 
@@ -1667,7 +1717,8 @@ for sub = 1:subj
            
             v(sub,r,e) = fe(1) + int(sub) ...
                 + (fe(2) + rewSen(sub))*zrew(r)' ...
-                + (fe(3) + effSen(sub))*(zeff(e));
+                + (fe(3) + effSen(sub))*(zeff(e))
+            + ;
             
         end
     end
