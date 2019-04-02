@@ -34,18 +34,18 @@ H2=shadedErrorBar(1:6,nanmean(grp_eff_2D),   ...
     {'-.','color',c('air force blue')},  ...
     'patchSaturation',0.3);
 axis square
-ylim([0 1.1]);xlim([0 7])
 ax=gca;
-set(ax,'fontWeight','bold','fontSize',16,'XTick',[1:1:5], ...
-    'XTickLabel',{'1','2','3','4','5','6'})
-xlabel('Reward/Effort level')
+set(ax,'fontWeight','bold','fontSize',18,'XTick',[1:1:5], ...
+    'XTickLabel',{'10','24','38','52','66','80'})
+xlabel('Reward (Apples)')
 ylabel('Prop. Offers Accepted')
-ylim([0 1.1]); xlim([0.5 6.5]);xticks([1 2 3 4 5 6]);
-title('SVD Group Performance across task');
+title('Reward incentivises motivated behaviour')
+ylim([0 1]); xlim([0.5 6.5]);xticks([1 2 3 4 5 6]);
+% title('Group average performance');
 hold off
 
 
-[lgd, icons, plots, txt] = legend([H1.mainLine H2.mainLine],{'Reward','Effort'});
+[lgd, icons, plots, txt] = legend([H1.mainLine],{'Reward'});
 
 
 % I now want to quality check every single subjects behaviour throughout
@@ -360,7 +360,7 @@ hist(tempt)
 c = @cmu.colors;
 
 close all
-subplot(1,3,1);
+subplot(1,3,2);
 dat = squeeze(mean(choices,2))';
 H1=shadedErrorBar(1:6,nanmean(dat(apVec==0,:)),   ...
     nanstd(dat(apVec==0,:)./sqrt(length(find(apVec==0)))),'lineprops',...
@@ -373,12 +373,12 @@ H2=shadedErrorBar(1:6,nanmean(dat(apVec==1,:)),   ...
     'patchSaturation',0.3);axis square
 ylim([0 1.1]);xlim([0 7])
 ax=gca;
-set(ax,'fontWeight','bold','fontSize',16,'XTick',[1:1:6], ...
-  'XTickLabel',{'1','2','3','4','5','6'})
-xlabel('Reward/Effort level')
+set(ax,'fontWeight','bold','fontSize',18,'XTick',[1:1:6], ...
+  'XTickLabel',{'10','24','38','52','66','80'})
+xlabel('Effort (% MVC)')
 ylabel('Prop. Offers Accepted')
 ylim([0.2 1])
-title('Effort vs Apathy');
+title('Apathy does not significantly alter effortful behaviour','FontSize',20);
 hold off
 
 
@@ -386,7 +386,7 @@ hold off
 
 
 dat = squeeze(mean(choices,1))';
-subplot(1,3,2)
+subplot(1,3,1)
 H1=shadedErrorBar(1:6,nanmean(dat(apVec==0,:)),   ...
     nanstd(dat(apVec==0,:)./sqrt(length(find(apVec==0)))),'lineprops',...
     {'-.','color', c('royal purple')},...
@@ -399,11 +399,11 @@ H2=shadedErrorBar(1:6,nanmean(dat(apVec==1,:)),   ...
 ylim([0 1.1]);xlim([0 7])
 ax=gca;
 set(ax,'fontWeight','bold','fontSize',16,'XTick',[1:1:6], ...
-  'XTickLabel',{'1','2','3','4','5','6'})
-xlabel('Reward/Effort level')
+  'XTickLabel',{'1','3','6','9','12','15'})
+xlabel('Reward (Apples)')
 ylabel('Prop. Offers Accepted')
 ylim([0.2 1])
-title('Reward vs Apathy');
+title('Apathy significantly reduces reward Incentivisation','FontSize',18);
 hold off
 
 
@@ -420,7 +420,7 @@ set(ax,'fontWeight','bold','fontSize',16,'XTick',[1:1:6],'YTickLabel',{'1','2','
 title('3D plot NoAp vs. AP')
 ylabel('Effort (%MVC)')
 xlabel('Reward')
-zlabel('Diff. Proportion accepted')
+zlabel('Difference Prop. accepted')
 hold on;
 base=zeros(5,5);
 hh=surf(base);
@@ -863,11 +863,6 @@ set(ax,'fontWeight','bold','fontSize',20,'XTick',[1:6],'XTickLabel',{0.1 0.24 0.
 axis square
 [lgd, icons, plots, txt] = legend([H1.mainLine],{'Whole Group'});
 xlabel('Required Effort (proportion MVC)');ylabel('Peak squeeze (proportion MVC)');
-
-
-
-
-
 
 
 figure()
@@ -1313,12 +1308,8 @@ linear=0;
 AES_total = FQs_Ex.AES_TOTAL;
 LARS_Total = FQs_Ex.LARS_TOTAL;
 BDI = FQs_Ex.BDI;
+D.Index=repmat(1:180,83,1);
 %%%%%%%
-
-% this is an option to redefine cut offs 
-if 0
-    apVec = depVec;
-end
 
 
 for i=1:subj % each subject
@@ -1333,6 +1324,7 @@ for i=1:subj % each subject
     forceVec(forceVec<0) = nan;
     vigVec = D.vigour(i,:)';
     block = D.block(i,:)';
+    Index = D.Index(i,:)';
     % create a matrix of decision times that will be excluded from
     % the final decision matrix that corresponds to those DT which
     % are more than 3 STD from the mean for that particular patient
@@ -1355,6 +1347,7 @@ for i=1:subj % each subject
         vigVec(removal)    = [];
         Z_decVec(removal)  = [];
         block(removal)     = [];
+        Index(removal)  = [];
     end
     clear removal
     if ~linear
@@ -1366,7 +1359,7 @@ for i=1:subj % each subject
             Composite(i)*ones(length(choicesVec),1),                ...
             BDI(i)*ones(length(choicesVec),1),                      ...
             RT_Slow(i)*ones(length(choicesVec),1),                  ...                                                     ...
-            block];
+            block Index];
     end
 end
 
@@ -1384,7 +1377,7 @@ CompAp    = subData(:,11);
 Depression= subData(:,12);
 RT_slow   = subData(:,13);
 Block     = (subData(:,14));
-
+Index     = (subData(:,15));
 if 0
     % ****** IF WANT Quadratic effort *******
     eff = eff.^2;
@@ -1399,12 +1392,13 @@ if 1
     Depression = nanzscore(Depression);
     Vigour = nanzscore(Vigour);
     DT = nanzscore(DT);
+    Index = nanzscore(Index);
 end
 %force=nanzscore(force);
 %lars = zscore(lars);
 
 Design = table(choice,Vigour,Z_DT,DT,rew,eff,ap,AES_T,LARS_T,CompAp,Depression, ...
-    subject,Block);
+    subject,Block,Index);
 
 
 %%
@@ -1412,9 +1406,10 @@ clear aic glme_fit bic
 linear=0; % which model type to run
 models = {    
     
-%  My Full model will look at Apathy depression and block effects.  
-% 4 way interactions will be taken out. I will compare 3 different
-% apathy scores. First Total AES as a continuous variable. 
+% Full factorial models first. These include interaction terms which I
+% think will have to come out inevitably. 
+
+%First Total AES as a continuous variable. 
 'choice ~ rew*eff*AES_T    + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
 % then the composite apathy variable that I created from AES and LARS total
 % scores. This is called CompAp
@@ -1424,6 +1419,8 @@ models = {
 'choice ~ rew*eff*ap       + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
 % finally the LARS total, which was very noisy. 
 'choice ~ rew*eff*LARS_T   + rew*eff*Depression + rew*eff*Block   +  (1|subject)'
+
+
 % The next three models does not account for block effects. It uses the
 % same three apathy scores used above. AES first. 
 'choice ~ rew*eff*AES_T    + rew*eff*Depression +  (1|subject)'
@@ -1433,16 +1430,15 @@ models = {
 'choice ~ rew*eff*ap       + rew*eff*Depression +  (1|subject)'
 % Then the lars Total
 'choice ~ rew*eff*LARS_T   + rew*eff*Depression +  (1|subject)'
+
+
 % Now look at models that do not include depression to compare model fits. 
-'choice ~ AES_T*rew  + AES_T*eff +  (1|subject)'
 'choice ~ rew*eff*AES_T  + rew*eff*Block  +  (1|subject)'
 'choice ~ rew*eff*CompAp + rew*eff*Block +  (1|subject)'
 'choice ~ rew*eff*ap     + rew*eff*Block     +  (1|subject)'
 'choice ~ rew*eff*LARS_T + rew*eff*Block +  (1|subject)'
 % now just look at apathy
 'choice ~ rew*eff*AES_T  +  (1|subject)'
-'choice ~ rew*eff*AES_T  + Depression +  (1|subject)'
-
 'choice ~ rew*eff*CompAp +  (1|subject)'
 'choice ~ rew*eff*ap     + (1|subject)'
 'choice ~ rew*eff*LARS_T +  (1|subject)'
@@ -1453,15 +1449,31 @@ models = {
 
 % how about simpler one way effects 
 'choice ~ rew*eff + (1|subject)'
-'choice ~ Block + (1|subject)'
+
 'choice ~ AES_T + (1|subject)'
 'choice ~ Depression + (1|subject)'
 
 
+%Models without interactions
+'choice ~ AES_T*rew  + AES_T*eff +  (1|subject)'
+'choice ~ AES_T*rew  + AES_T*eff + Depression*rew + Depression*eff+(1|subject)'
+'choice ~ Depression*rew + Depression*eff + (1|subject)'
+'choice ~ AES_T*rew  + AES_T*eff + Depression*rew + Depression*eff'
+}
+
+clear aic glme_fit bic
+linear=0; % which model type to run
+models = {   
+% new types of models which include a random effect based on trial. 
+'choice ~ AES_T*rew*eff + (1 + rew:Index + eff:Index + Index + rew:eff|subject)'
+'choice ~ AES_T*rew*eff + (1 + rew:Index + eff:Index + Index |subject)'
+'choice ~ AES_T*rew*eff + Depression + (1 + rew:Index + eff:Index + Index + rew:eff|subject)'
+'choice ~ AES_T*rew*eff + Depression + (1 + rew:Index + eff:Index + Index|subject)'
+'choice ~ AES_T*rew  + AES_T*eff + Depression +(1+Index:rew+Index:eff+Index|subject)'
     };
 
 if linear
-    for i=1:length(models)
+    for i=1:length(models)glme_fit
         sprintf('starting model %g',i)
         glme_fit{i}=fitglme(Design,models{i},'Distribution','normal');
         aic(i)=glme_fit{i}.ModelCriterion.AIC;

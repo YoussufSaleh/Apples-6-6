@@ -15,7 +15,7 @@ raw = raw(2:end,:);
 raw(cellfun(@(x) ~isempty(x) && isnumeric(x) && isnan(x),raw)) = {''};
 stringVectors = string(raw(:,1));
 stringVectors(ismissing(stringVectors)) = '';
-raw = raw(:,[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]);
+raw = raw(:,[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]);
 
 %% Replace non-numeric cells with NaN
 R = cellfun(@(x) ~isnumeric(x) && ~islogical(x),raw); % Find non-numeric cells
@@ -47,7 +47,7 @@ Qs_Final_raw.FullStructural = data(:,15);
 Qs_Final_raw.FullDiffusion30 = data(:,16);
 Qs_Final_raw.FullDiffusion60 = data(:,17);
 Qs_Final_raw.dysphoria = data(:,18);
-
+Qs_Final_raw.CANTRIL = data(:,19);
 
 
 %% Clear temporary variables
@@ -67,24 +67,12 @@ Composite = score;
 
 % lets add this onto the parent table. nb. 'addvars' is a function that needs
 % MATLAB version 2018a and beyond. 
-FQs_Ex = addvars(FQs_Ex,Composite,'After','Other');
+FQs_Ex.Composite = Composite;
 % now lets have a look at how this measures up against the rest of the
 % variables
 
 save('Questionnaires_final','FQs_Ex','Qs_Final_raw');
 
-% what happens if I take the PCA of both apathy and depression? 
-[coeff,score,latent,tsquared,explained,mu]=pca(nanzscore ...
-    ([FQs_Ex.AES_TOTAL,FQs_Ex.BDI]),'NumComponents',1);
-depAP = score;
-FQs_Ex = addvars(FQs_Ex,depAP);
-
-% now lets look at the residuals that come out of this. 
-[coeff,score,latent,tsquared,explained,mu]=pca(nanzscore ...
-    (XAP),'NumComponents',1);
-Composite = score;
-residuals = pcares(X,ndim)
-[residuals,reconstructed] = pcares(X,ndim)
 
 %% Correlation plots 
 
@@ -93,10 +81,10 @@ residuals = pcares(X,ndim)
 %rmpath  '/Users/youssufsaleh/Documents/Master folder/Apples v2/matlib'
 % use this instead if your working on your laptop
 rmpath  '/Users/youssufsaleh/Documents/Master folder/Apples v2/matlib'
-
+close all
 [R,PValue] = corrplot(FQs_Ex(:,{'Age','LARS_TOTAL' 'LARS_E','LARS_AI','LARS_SA', ...
  'AES_TOTAL','AES_Cognitive','AES_Behavioural', ...
- 'AES_Emotional','Other','Composite','BDI','ACE_Total'}), ...
+ 'AES_Emotional','Other','Composite','BDI','ACE_Total','CANTRIL'}), ...
  'type','Pearson','testR','on','rows','pairwise');
 
 % What I want to do now is add on the accept variable from the analysis
@@ -140,11 +128,11 @@ FQs_Ex.groupAlloc = apVec;
 
 % Demographics table
 clear m s M S t
-m=varfun(@nanmean,FQs_Ex(:,[2 3 7 8 13 14 15 21]),'GroupingVariable',{'groupAlloc'});
-s=varfun(@nanstd,FQs_Ex(:,[2 3 7 8 13 14 15 21]),'GroupingVariable',{'groupAlloc'});
+m=varfun(@nanmean,FQs_Ex(:,[2 7:11 13:14 20 22]),'GroupingVariable',{'groupAlloc'});
+s=varfun(@nanstd,FQs_Ex(:,[2 7:11 13:14 20 22]),'GroupingVariable',{'groupAlloc'});
 
-[h p] = ttest2(table2array(FQs_Ex(FQs_Ex.groupAlloc==1,[2 3 7 8 13 14 15])), ...
-  table2array(FQs_Ex(FQs_Ex.groupAlloc==0,[2 3 7 8 13 14 15])));
+[h p] = ttest2(table2array(FQs_Ex(FQs_Ex.groupAlloc==1,[2 7:11 13 14 20])), ...
+  table2array(FQs_Ex(FQs_Ex.groupAlloc==0,[2 7:11 13 14 20])));
 
 M = table2array(m(:,3:end));
 S = table2array(s(:,3:end));
@@ -152,7 +140,7 @@ S = table2array(s(:,3:end));
 t = array2table(horzcat(M(1,:)',S(1,:)',M(2,:)',S(2,:)',p'));
 t.Properties.VariableNames = {'lessApathetic_mean','lessApathetic_SD','moreApathetic_mean','moreApathetic_SD','Pvalue'};
 
-t.Properties.RowNames = {'Age','Gender','LARS','AES','Composite Score (z-scored)','BDI','ACE'};
+t.Properties.RowNames = {'Age','LARS','AES.Total','AES.C','AES.B','AES.E','BDI','ACE','CANTRIL'};
  
 writetable(t,...
    'demographicTable.csv',...
