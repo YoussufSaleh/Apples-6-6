@@ -111,18 +111,44 @@ subj = size(D.R,1); %How many subjects?
 % exclude RJ from SVD cohort. 
 
 % create apathy vector (~debatable on exactly how to categorise patients)
-apVec=[]';
+apVec34=[]';
+for i = 1:subj
+    %if FQs_Ex.LARS_TOTAL(i)>-22 || FQs_Ex.AES_TOTAL(i) > 37
+    %if FQs_Ex.AES_TOTAL(i) > 37
+    if FQs_Ex.AES_TOTAL(i) > 34
+            %nanstd(FQs_Ex.Composite)
+        apVec34(i)=1;
+    else apVec34(i)=0;
+    end
+end
+    
+apVec34 = apVec34';
+% set up another cut off 
+apVec37=[]';
+for i = 1:subj
+    %if FQs_Ex.LARS_TOTAL(i)>-22 || FQs_Ex.AES_TOTAL(i) > 37
+    %if FQs_Ex.AES_TOTAL(i) > 37
+    if FQs_Ex.AES_TOTAL(i) > 37
+            %nanstd(FQs_Ex.Composite)
+        apVec37(i)=1;
+    else apVec37(i)=0;
+    end
+end
+    
+apVec37 = apVec37';
+% and another at the median. 
+apVec29=[]';
 for i = 1:subj
     %if FQs_Ex.LARS_TOTAL(i)>-22 || FQs_Ex.AES_TOTAL(i) > 37
     %if FQs_Ex.AES_TOTAL(i) > 37
     if FQs_Ex.AES_TOTAL(i) > 29
             %nanstd(FQs_Ex.Composite)
-        apVec(i)=1;
-    else apVec(i)=0;
+        apVec29(i)=1;
+    else apVec29(i)=0;
     end
 end
     
-apVec = apVec';
+apVec29 = apVec29';
 %apVec(9)=1; %aesVec for this subject 40
 if 1 % if generating MRI inputs therefore need to exclude subj 2 and 19
     mriApVec = apVec;
@@ -357,9 +383,25 @@ hist(tempt)
 
 %% **************** 2D plots ***********************
 %using just errorbar function to avoid difficulties with errorBarPlot
+
+
+depVec=[];
+for i=1:subj
+    if FQs_Ex.BDI(i) > 13 || FQs_Ex.AES_TOTAL(i) > 37 %|| 
+      
+        depVec(i)=1;
+    else
+        depVec(i)=0;
+    end
+end
+depVec=depVec';
+
+apVec=depVec
+
+figure()
 c = @cmu.colors;
 
-close all
+
 subplot(1,3,2);
 dat = squeeze(mean(choices,2))';
 H1=shadedErrorBar(1:6,nanmean(dat(apVec==0,:)),   ...
@@ -381,9 +423,7 @@ ylim([0.2 1])
 title('Apathy does not significantly alter effortful behaviour','FontSize',20);
 hold off
 
-
 [lgd, icons, plots, txt] = legend([H1.mainLine H2.mainLine],{'No Apathy','Apathy'});
-
 
 dat = squeeze(mean(choices,1))';
 subplot(1,3,1)
@@ -406,7 +446,6 @@ ylim([0.2 1])
 title('Apathy significantly reduces reward Incentivisation','FontSize',18);
 hold off
 
-
 [lgd, icons, plots, txt] = legend([H1.mainLine H2.mainLine],{'No Apathy','Apathy'});
 
 
@@ -417,7 +456,7 @@ choiceDif=(mean(choices(:,:,apVec==0),3)-mean(choices(:,:,apVec==1),3));
 h=surf(choiceDif);shading('interp');hold on;colormap('jet');%colorbar('Ticks',0:.05:.2)
 ax=gca;
 set(ax,'fontWeight','bold','fontSize',16,'XTick',[1:1:6],'YTickLabel',{'1','2','3','4','5','6'},'YTick',[1:1:6],'XTickLabel',{'1','2','3','4','5','6'},'ZTick',[0:0.05:0.20],'ZTickLabel',{'0','0.05','0.1','0.15','0.2'})
-title('3D plot NoAp vs. AP')
+title('3D plot neither vs.either')
 ylabel('Effort (%MVC)')
 xlabel('Reward')
 zlabel('Difference Prop. accepted')
@@ -931,6 +970,7 @@ set(gca,'fontWeight','bold','FontSize',20,'XTick',[1 2],'XTickLabel',{'SVD-NoAp'
 
 %% Vigour stuff
 % subtract expected...
+apVec = apVec34
 close all
 clear vig
 Uneff = [0.1 0.24 0.38 0.52 0.66 0.80];
@@ -977,7 +1017,8 @@ ylabel('Effect of Reward on change in Motor Vigour')
 % there is an outlier here which I want to remove. 
 clear DT ap vecA vecnoA
 DT = dt;
-ap=apVec;
+DT = nanzscore(log(DT));
+ap=apVec34;
 
 close all
 for i=1:length(find(ap==0))
@@ -990,8 +1031,8 @@ end
 figure() % First just plot mean dt for the 3 groups
 
 %bar(1,mean(nanmean(decisionTime_HC,2)),'FaceColor',[0.7 0.7 0.7]);hold on;
-bar(1,mean(nanmean(DT(ap==0,:),2)),'FaceColor',color1);hold on
-bar(2,mean(nanmean(DT(ap==1,:),2)),'FaceColor',color2);
+bar(1,mean(nanmean(DT(ap==0,:),2)),'FaceColor','b');hold on
+bar(2,mean(nanmean(DT(ap==1,:),2)),'FaceColor','r');
 if 1
  %   plot(vecHC,nanmean(decisionTime_HC,2),'.','MarkerSize',20,'MarkerEdgeColor',[0.5 0.5 0.5]);hold on
     plot(vecnoA,nanmean(DT(ap==0,:),2),'.','MarkerSize',20,'MarkerEdgeColor',[0.5 0.5 0.5])
@@ -1075,8 +1116,8 @@ title('(log) Decision time vs Choice(Y/N)')
 figure()
 temp=dtYes(:,2)-dtYes(:,1);%tempHC=dtYes_HC(:,2)-dtYes_HC(:,1);
 %bar(1,nanmean(tempHC),'m');hold on;errorbar(1,nanmean(tempHC),nanstd(tempHC)./sqrt(19),'k','LineWidth',3);
-bar(1,nanmean(temp(ap==0)),'Facecolor',color1);hold on;errorbar(1,nanmean(temp(ap==0)),nanstd(temp(ap==0))./sqrt(length(find(ap==0))),'k','LineWidth',3);
-bar(2,nanmean(temp(ap==1)),'Facecolor',color2);hold on;errorbar(2,nanmean(temp(ap==1)),nanstd(temp(ap==1))./sqrt(length(find(ap==1))),'k','LineWidth',3);
+bar(1,nanmean(temp(ap==0)),'Facecolor','b');hold on;errorbar(1,nanmean(temp(ap==0)),nanstd(temp(ap==0))./sqrt(length(find(ap==0))),'k','LineWidth',3);
+bar(2,nanmean(temp(ap==1)),'Facecolor','r');hold on;errorbar(2,nanmean(temp(ap==1)),nanstd(temp(ap==1))./sqrt(length(find(ap==1))),'k','LineWidth',3);
 if 1
     %plot(vecHC,nanmean(tempHC,2),'.','MarkerSize',12,'MarkerEdgeColor',[0.5 0.5 0.5])
     plot(vecnoA,nanmean(temp(ap==0,:),2),'.','MarkerSize',12,'MarkerEdgeColor',[0.5 0.5 0.5])
@@ -1143,9 +1184,9 @@ end
 
 figure()
 %errorBarPlot(easyDecHC,'Color',[0.7 0.7 0.7],'LineWidth',3);hold on
-errorBarPlot(easyDec(ap==0,:),'Color',color1,'LineWidth',3);
+errorBarPlot(easyDec(ap==0,:),'Color','b','LineWidth',3);
 hold on 
-errorBarPlot(easyDec(ap==1,:),'Color',color2,'LineWidth',3);
+errorBarPlot(easyDec(ap==1,:),'Color','r','LineWidth',3);
 legend('SVD No Apathy','SVD Apathy')
 ax=gca;
 set(ax,'fontWeight','bold','fontSize',20,'XTick',[1 2],'XTickLabel',{'Easy','Hard'})
@@ -1195,7 +1236,7 @@ close all
 
 depVec=[];
 for i=1:subj
-    if FQs_Ex.AES_TOTAL(i) > 34
+    if FQs_Ex.AES_TOTAL(i) < 37 & FQs_Ex.BDI(i) > 13
       
         depVec(i)=1;
     else
@@ -1211,10 +1252,10 @@ for i=1:2
     dat = squeeze(mean(choices,i))';
    % dat_hc=squeeze(mean(choices_HC,i))';
     %errorbar(1:6,mean(dat_hc),std(dat_hc)./sqrt(19),'m--','LineWidth',3); hold on;
-    errorbar(1:6,mean(dat(depVec==0,:)),std(dat(depVec==0,:))./sqrt(length(depVec==0)),'b','LineWidth',3); hold on;
-    errorbar(1:6,mean(dat(depVec==1,:)),std(dat(depVec==1,:))./sqrt(length(depVec==1)),'r','LineWidth',3)
+    errorbar(1:6,mean(dat(depVec==0,:)),std(dat(depVec==0,:))./sqrt(length(find(depVec==0))),'b','LineWidth',3); hold on;
+    errorbar(1:6,mean(dat(depVec==1,:)),std(dat(depVec==1,:))./sqrt(length(find(depVec==1))),'r','LineWidth',3)
     %title('proportion of offers accepted as reward level increases')
-    legend('SVDc No Depr','SVDc Depr');
+    legend('SVD without Ap+DEp','SVD with AP+Dep ');
     axis square
     ylim([0 1.1]);xlim([0 7])
     ax=gca;
@@ -1227,6 +1268,7 @@ for i=1:2
         xlabel('Reward level')
         ylabel('Proportion of offers accepted')
     end
+    title('Apathetic+Depressed')
 end
 %% Dysphoria subscale
 %load bdi_full_cad
@@ -1353,13 +1395,14 @@ for i=1:subj % each subject
     if ~linear
         subData = [subData;i*ones(length(choicesVec),1) choicesVec, ...
             vigVec decVec Z_decVec reward effort                    ...
-            apVec(i)*ones(length(choicesVec),1),                    ...
+            apVec29(i)*ones(length(choicesVec),1),                    ...
             AES_total(i)*ones(length(choicesVec),1),                ...
             LARS_Total(i)*ones(length(choicesVec),1),               ...
             Composite(i)*ones(length(choicesVec),1),                ...
             BDI(i)*ones(length(choicesVec),1),                      ...
             RT_Slow(i)*ones(length(choicesVec),1),                  ...                                                     ...
-            block Index];
+            block Index apVec34(i)*ones(length(choicesVec),1),      ...
+            apVec37(i)*ones(length(choicesVec),1)];
     end
 end
 
@@ -1370,7 +1413,7 @@ DT        = subData(:,4);
 Z_DT      = subData(:,5);
 rew       = subData(:,6);
 eff       = subData(:,7);
-ap        = subData(:,8);
+ap29     = subData(:,8);
 AES_T     = subData(:,9);
 LARS_T    = subData(:,10);
 CompAp    = subData(:,11);
@@ -1378,14 +1421,22 @@ Depression= subData(:,12);
 RT_slow   = subData(:,13);
 Block     = (subData(:,14));
 Index     = (subData(:,15));
+ap34      = (subData(:,16));
+ap37      = (subData(:,17));
+
 if 0
     % ****** IF WANT Quadratic effort *******
     eff = eff.^2;
 end
+
+eff2 = eff.^2;
+eff3 = eff.^3;
+
 if 1
     rew=nanzscore(rew);
     eff=nanzscore(eff);
-    ap = nanzscore(ap);
+    ap34 = nanzscore(ap34);
+    ap29 = nanzscore(ap29);
     Block = nanzscore(Block);
     AES_T = nanzscore(AES_T);
     LARS_T = nanzscore(LARS_T);
@@ -1393,15 +1444,17 @@ if 1
     Vigour = nanzscore(Vigour);
     DT = nanzscore(DT);
     Index = nanzscore(Index);
+    eff2 = nanzscore(eff2);
+    eff3 = nanzscore(eff3);
 end
 %force=nanzscore(force);
 %lars = zscore(lars);
 
-Design = table(choice,Vigour,Z_DT,DT,rew,eff,ap,AES_T,LARS_T,CompAp,Depression, ...
-    subject,Block,Index);
+Design = table(choice,Vigour,Z_DT,DT,rew,eff,ap34,ap29,ap37,AES_T,CompAp,Depression, ...
+    subject,Block,Index,eff2,eff3);
 
 
-%%
+%% all different model possibilities ( more than 30). 
 clear aic glme_fit bic
 linear=0; % which model type to run
 models = {    
@@ -1458,22 +1511,25 @@ models = {
 'choice ~ AES_T*rew  + AES_T*eff +  (1|subject)'
 'choice ~ AES_T*rew  + AES_T*eff + Depression*rew + Depression*eff+(1|subject)'
 'choice ~ Depression*rew + Depression*eff + (1|subject)'
-'choice ~ AES_T*rew  + AES_T*eff + Depression*rew + Depression*eff'
-}
 
-clear aic glme_fit bic
-linear=0; % which model type to run
-models = {   
 % new types of models which include a random effect based on trial. 
 'choice ~ AES_T*rew*eff + (1 + rew:Index + eff:Index + Index + rew:eff|subject)'
 'choice ~ AES_T*rew*eff + (1 + rew:Index + eff:Index + Index |subject)'
 'choice ~ AES_T*rew*eff + Depression + (1 + rew:Index + eff:Index + Index + rew:eff|subject)'
 'choice ~ AES_T*rew*eff + Depression + (1 + rew:Index + eff:Index + Index|subject)'
-'choice ~ AES_T*rew  + AES_T*eff + Depression +(1+Index:rew+Index:eff+Index|subject)'
+'choice ~ AES_T*rew  + AES_T*eff + Depression + (1+Index:rew+Index:eff+Index|subject)'
+
+
+% a simplified version of the above 
+'choice ~ AES_T*rew*eff + (1 + Index |subject)'
+'choice ~ AES_T*rew+ AES_T*eff + (1 + Index |subject)'
+'choice ~ rew+eff + (rew+eff|subject)'
+'choice ~ rew*eff + (rew*eff|subject)'
+
     };
 
 if linear
-    for i=1:length(models)glme_fit
+    for i=1:length(models)
         sprintf('starting model %g',i)
         glme_fit{i}=fitglme(Design,models{i},'Distribution','normal');
         aic(i)=glme_fit{i}.ModelCriterion.AIC;
@@ -1499,38 +1555,53 @@ if 0 % save outputs
 save('glme_fitPD_Z','models','glme_fit')
 end
 
-%% I now want to run this model with a different fit method. here I will use Approximate Laplace. 
+%% I now want to run this model for the final candidates. 
+clear aic glme_fit bic
+linear = 0; % which model type to run
+models = {
+    
+'choice ~ AES_T*rew*eff2 + (1|subject)'
+'choice ~ AES_T*rew*eff2 + Depression*rew*eff2 + (1|subject)'
+'choice ~ ap29*rew*eff2  + (1|subject)'
+'choice ~ ap34*rew*eff2  + (1|subject)'
+'choice ~ ap37*rew*eff2  + (1|subject)'
+'choice ~ ap29*rew*eff2  + Depression*rew*eff2 + (1|subject)'
+'choice ~ ap34*rew*eff2  + Depression*rew*eff2 + (1|subject)'
+'choice ~ ap37*rew*eff2  + Depression*rew*eff2 + (1|subject)'
+
+
+
+}
+
+
+% 'choice ~ rew+eff2 + (rew+eff2|subject)'
+% 'choice ~ rew*eff2 + (rew*eff2|subject)'
+  
+
 
 if linear
     for i=1:length(models)
         sprintf('starting model %g',i)
         glme_fit{i}=fitglme(Design,models{i},'Distribution','normal');
         aic(i)=glme_fit{i}.ModelCriterion.AIC;
-        bicf(i)=glme_fit{i}.ModelCriterion.BIC;
+        bic(i)=glme_fit{i}.ModelCriterion.BIC;
     end
 else
     for i=1:length(models)
         sprintf('starting model %g',i)
-        glme_fit_a{i}=fitglme(Design,models{i},'Distribution','binomial','fitmethod','ApproximateLaplace');
-        aica(i)=glme_fit_a{i}.ModelCriterion.AIC;
-        bica(i)=glme_fit_a{i}.ModelCriterion.BIC;
+        glme_fit{i}=fitglme(Design,models{i},'Distribution','binomial','fitmethod','Laplace');
+        aic(i)=glme_fit{i}.ModelCriterion.AIC;
+        bic(i)=glme_fit{i}.ModelCriterion.BIC;
                 
 
     end
 end
-aicamin=aica-min(aica);
-bicamin=bica-min(bica);
+aicm=aic-min(aic);
+bicm=bic-min(bic);
 
 if 1
-    save('glme_fit_lin_cat_approximate','models','glme_fit_a')
+    save('glme_final_candidates','models','glme_fit')
 end
-if 0 % save outputs
-save('glme_fitPD_Z','models','glme_fit')
-end
-
-
-
-
 
 %% view p values from all models, for a given effect
 effect = '^rew:(AES_T|CompAp|LARS_T|ap)$';
@@ -1549,7 +1620,7 @@ linear = 1;
 models_force = {
  
 'Vigour ~ rew*eff*AES_T + (1|subject)'
-'Vigour ~ rew*eff*AES_T + rew*eff*Depression + (1|subject)'
+'Vigour ~ rew*eff*ap34 + (1|subject)'
 
 
   
@@ -1590,8 +1661,10 @@ linear = 1;
 models_time = {
  
 'Z_DT ~ rew*eff*AES_T + (1|subject)'
-'Z_DT ~ rew*eff*AES_T + rew*eff*Depression'
- % now try without logging 
+'Z_DT ~ rew*eff2*AES_T + (1|subject)'
+'Z_DT ~ rew*eff2*ap34 + (1|subject)'
+
+
   };
 
   
@@ -1626,14 +1699,15 @@ end
 
 % First use the appropriate glmemodel
 model = { ...
-    'choice ~ rew+eff + (rew+eff|subject)'
+    'choice ~ rew+eff2 + (rew+eff2|subject)'
+    'choice ~ rew*eff2 + (rew*eff2|subject)'
     };
 
 % Then run the GLME with the two main outputs being B and BNames which
 % correspond to the random effects parameters and their corresponding names
 % in table form respectively. 
-i = 1;
-[B,BNames] = randomEffects(fitglme(Design,model{i},'Distribution','binomial','fitmethod','Laplace'));
+ i = 2;
+[B,BNames] = randomEffects(fitglme(Design,model{i},'Distribution','binomial','FitMethod','Laplace'));
 
 % The output of this is a 159*1 matrix and a table whose dimensions is
 % 159*3. The output format contains three random effects parameters per
@@ -1643,23 +1717,27 @@ i = 1;
 
 %Intrinsic Motivation or int represents the intercept variation per
 %subject. index into all intercept values.  
-int = B(1:3:end);
+int = B(1:4:end);
 % reward sensitivity encoded as rewSen and indexes into all reward
 % parameters
-rewSen = B(2:3:end);
+rewSen = B(2:4:end);
 %effort sensitivity encoded as effSen 
-effSen = B(3:3:end);
+effSen = B(3:4:end);
+
+reweff = B(4:4:end);
 
 
 
 % Now plot these for apathetic and non apathetic patients. 
 
 % Intrinsic Motivation estimate
-M = fitglme(Design,model{i},'Distribution','binomial','fitmethod','Laplace');
+
+M = fitglme(Design,model{i},'Distribution','binomial','FitMethod','Laplace');
+
 fe=M.fixedEffects;
 close all
 
-
+apVec=apVec34;
 subplot(2,2,1)
 
 bar(1,fe(1)+(mean(int(apVec==0))),0.5);hold on;bar(2,fe(1)+(mean(int(apVec==1))),0.5);
