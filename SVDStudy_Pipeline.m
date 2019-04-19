@@ -36,16 +36,16 @@ H2=shadedErrorBar(1:6,nanmean(grp_eff_2D),   ...
 axis square
 ylim([0 1.1]);xlim([0 7])
 ax=gca;
-set(ax,'fontWeight','bold','fontSize',16,'XTick',[1:1:5], ...
-    'XTickLabel',{'1','2','3','4','5','6'})
-xlabel('Reward/Effort level')
+set(ax,'fontWeight','bold','fontSize',18,'XTick',[1:1:5], ...
+    'XTickLabel',{'1','3','6','9','12','15'})
+xlabel('Reward (Apples)')
 ylabel('Prop. Offers Accepted')
 ylim([0 1.1]); xlim([0.5 6.5]);xticks([1 2 3 4 5 6]);
-title('SVD Group Performance across task');
+title('Reward incentivises motivated behaviour');
 hold off
 
 
-[lgd, icons, plots, txt] = legend([H1.mainLine H2.mainLine],{'Reward','Effort'});
+[lgd, icons, plots, txt] = legend([H1.mainLine],{'Reward'});
 
 
 % I now want to quality check every single subjects behaviour throughout
