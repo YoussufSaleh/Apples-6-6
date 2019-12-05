@@ -198,34 +198,6 @@ for i = 1:subj
 end
     
 apVec34 = apVec34';
-
-apVec365=[]';
-for i = 1:subj
-    %if FQs_Ex.LARS_TOTAL(i)>-22 || FQs_Ex.AES_TOTAL(i) > 37
-    %if FQs_Ex.AES_TOTAL(i) > 37
-    if FQs_Ex.AES_TOTAL(i) > 36.5
-            %nanstd(FQs_Ex.Composite)
-        apVec365(i)=1;
-    else apVec365(i)=0;
-    end
-end
-    
-apVec365 = apVec365';
-
-apVec40 = apVec34';
-
-apVec40=[]';
-for i = 1:subj
-    %if FQs_Ex.LARS_TOTAL(i)>-22 || FQs_Ex.AES_TOTAL(i) > 37
-    %if FQs_Ex.AES_TOTAL(i) > 37
-    if FQs_Ex.AES_TOTAL(i) > 40
-            %nanstd(FQs_Ex.Composite)
-        apVec40(i)=1;
-    else apVec40(i)=0;
-    end
-end
-    
-apVec40 = apVec40';
     
 % reshape choice data & prepare decision time matrix
 choices = nanmean(grpD.choicemap{1},4);
@@ -1489,9 +1461,7 @@ for i=1:subj % each subject
             depMedian(i)*ones(length(choicesVec),1),...
             dep14(i)*ones(length(choicesVec),1),...
             dep19(i)*ones(length(choicesVec),1),...
-            apVec365(i)*ones(length(choicesVec),1),...
-            apVec40(i)*ones(length(choicesVec),1),...
-
+%             R_F1(i)*ones(length(choicesVec),1),...
             ];
         
     end
@@ -1527,8 +1497,7 @@ apMedian = (subData(:,25));
 depMedian = (subData(:,26));
 dep14 = (subData(:,27));
 dep19= (subData(:,28));
-apathy365 = (subData(:,29));
-ap40 = (subData(:,30));
+% Factor1 = (subData(:,29));
 if 1
     rew=nanzscore(rew);
     eff=nanzscore(eff);
@@ -1553,7 +1522,6 @@ if 1
     MedianDep = nanzscore(depMedian);
     Dep14 = nanzscore(dep14);
     Dep19 = nanzscore(dep19);
-    ap40 = nanzscore(ap40);
 %     Factor1 = nanzscore(Factor1);
 end
 %force=nanzscore(force);
@@ -1561,8 +1529,7 @@ end
 
 Design = table(choice,Vigour,Z_DT,DT,rew,eff,ap34,ap29,ap37,AES_T,CompAp,Depression, ...
     subject,Block,Index,eff2,eff3,apinv,depinv,residualap,EFA_Ap,EFA_Dep,...
-    Apathy_Residuals, Depression_Residuals, MedianAp,MedianDep,Dep14,...
-    Dep19,apathy365,ap40);
+    Apathy_Residuals, Depression_Residuals, MedianAp,MedianDep,Dep14,Dep19);
 
 
 %% all different model possibilities ( more than 30). 
@@ -1741,17 +1708,17 @@ models_cuts = {
 'choice ~ rew*eff2*Dep14 +rew*eff2*ap34 +(1|subject)';
 'choice ~ rew*eff2*Dep19 +rew*eff2*ap34 +(1|subject)';
 'choice ~ rew*eff2*MedianAp +rew*eff2*MedianDep +(1|subject)';
-'choice ~ rew*eff*MedianAp + rew*eff2*Dep19 + (1|subject)';
-'choice ~ rew*eff*MedianAp + rew*eff2*Dep14 + (1|subject)';
-'choice ~ rew*eff2*MedianAp +rew*eff2*MedianDep +(rew*eff|subject)';
-'choice ~ rew*eff2*apathy365 +(1|subject)';
-'choice ~ rew*eff2*apathy365 + rew*eff2*Dep14+(1|subject)';
-'choice ~ rew*eff2*ap40 +(1|subject)';
-'choice ~ rew*eff2*ap40 + rew*eff2*Dep14+(1|subject)';
-
 }
 
+models_cuts{33} = 'choice ~ rew*eff*MedianAp + rew*eff2*Dep19 + (1|subject)'
 
+% 'choice ~ rew+eff2 + (rew+eff2|subject)'
+% 'choice ~ rew*eff2 + (rew*eff2|subject)'
+  
+% plot aic of all cut offs 
+close;bar(aic_cuts([23:33]));ylim([7300 7500]);
+xticklabels({'AES37','AES34','AES29','AES32-Median','BDI14','BDI20',...
+    'BDI10','AES34BDI14','AES34BDI20','AES32BDI10',''})
 
 
 
@@ -1774,17 +1741,6 @@ else
 end
 aicm_cuts=aic_cuts-min(aic_cuts);
 bicm_cuts=bic_cuts-min(bic_cuts);
-
-
-% 'choice ~ rew+eff2 + (rew+eff2|subject)'
-% 'choice ~ rew*eff2 + (rew*eff2|subject)'
-  
-%plot aic of all cut offs 
-close;bar(aic_cuts([23 24 26]));ylim([7430 7450]);
-xticklabels({'AES37','AES34','AES32-Median'});
-ylabel('AIC values for different Cut-Offs');
-title('Best Model fit belongs to AES-32')
-set(findall(gcf,'type','text'),'FontSize',22,'fontWeight','bold')
 
 if 1
     save('glme_cuts','models_cuts','glme_fit_cuts')
