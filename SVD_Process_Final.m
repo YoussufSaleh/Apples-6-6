@@ -191,6 +191,7 @@ for i=1:size(d.R,1) % for each subject
                 choicemap(effort, reward, i, :) = y(filter);
                 decisiont(effort, reward, i, :) = dt(i, filter);
                 maxforce( effort, reward, i, :) = maxFNorm(i, filter);
+                maxVig( effort,reward,i,:) = 
                 hand(     effort, reward, i, :) = H(i, filter);
 %                 AUCA(     effort, reward, i, :) = AUC1(i,filter);
 %                 AUCB(     effort, reward, i, :) = AUC2(i,filter);
@@ -265,6 +266,7 @@ for i=1:size(d.R,1) % for each subject
     end
     grpD.hand{subGroup} = hand;
 end
+D.maxFnorm=maxFNorm;
 
 save('AGT_SVD_Final');
 
